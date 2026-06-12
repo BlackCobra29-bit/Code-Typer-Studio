@@ -123,7 +123,9 @@ function customSelectIcon(select, value) {
     return '<span class="grid h-6 w-6 place-items-center rounded bg-slate-900 text-[10px] font-bold text-white" aria-hidden="true">fn</span>';
   }
 
-  return '<span class="grid h-6 w-6 place-items-center rounded bg-sky-600 text-[10px] font-bold text-white" aria-hidden="true">S</span>';
+  const sampleLanguage = samples[value]?.language || "json";
+  const sampleLabel = languageLabels[sampleLanguage] || sampleLanguage;
+  return `<img class="h-6 w-6 object-contain" src="/static/icons/${languageBadges[sampleLanguage] || "json.svg"}" alt="${sampleLabel} icon">`;
 }
 
 function closeCustomSelect(wrapper) {
@@ -179,6 +181,11 @@ function syncCustomSelect(select) {
   const valueElement = customSelect.trigger.querySelector("[data-select-value]");
   if (valueElement) {
     valueElement.textContent = customSelectLabel(select, selectedValue);
+  }
+
+  const iconElement = customSelect.trigger.querySelector("[data-select-icon]");
+  if (iconElement) {
+    iconElement.innerHTML = customSelectIcon(select, selectedValue);
   }
 
   customSelect.options.forEach((optionButton) => {

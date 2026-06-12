@@ -61,7 +61,7 @@ ASPECT_RATIO_DIMENSIONS = {
     if item["width"] is not None and item["height"] is not None
 }
 
-DEFAULT_SAMPLE = "Rust struct"
+DEFAULT_SAMPLE = "Python API"
 
 LANGUAGE_EXTENSIONS = {
     "bash": "sh",
@@ -111,6 +111,7 @@ async def index(request: Request) -> HTMLResponse:
             "aspect_ratios_json": json.dumps(ASPECT_RATIOS),
             "samples": SAMPLES,
             "samples_json": json.dumps(SAMPLES),
+            "default_sample": DEFAULT_SAMPLE,
             "values": initial,
             "preview_html": preview_html,
             "current_year": date.today().year,

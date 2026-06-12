@@ -140,13 +140,13 @@
           <div class="relative block px-0 py-1 sm:px-0" data-custom-select="sample_name">
             <span class="mb-1 block text-xs font-bold text-[#333]">Sample</span>
             <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="sample-menu">
-              <span class="grid h-5 w-5 place-items-center rounded bg-sky-600 text-[10px] font-bold text-white" aria-hidden="true">S</span>
-              <span class="truncate" id="sample-value">{{ samples.keys()|first }}</span>
+              <span class="grid h-5 w-5 place-items-center" data-select-icon aria-hidden="true"></span>
+              <span class="truncate" id="sample-value">{{ default_sample }}</span>
               <i class="bi bi-chevron-down ml-auto text-xs text-slate-500" aria-hidden="true"></i>
             </button>
             <select id="sample_name" class="sr-only" tabindex="-1" aria-hidden="true">
               {% for name in samples %}
-                <option value="{{ name }}" {% if loop.first %}selected{% endif %}>{{ name }}</option>
+                <option value="{{ name }}" {% if name == default_sample %}selected{% endif %}>{{ name }}</option>
               {% endfor %}
             </select>
             <div class="absolute left-0 right-0 top-full z-50 mt-2 hidden max-h-72 overflow-y-auto rounded-xl bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200" id="sample-menu" data-select-menu role="listbox"></div>
@@ -309,6 +309,6 @@
   <script id="aspect-ratio-data" type="application/json">{{ aspect_ratios_json | safe }}</script>
   <script id="sample-data" type="application/json">{{ samples_json | safe }}</script>
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <script src="{{ url_for('static', path='app.js') }}?v=8"></script>
+  <script src="{{ url_for('static', path='app.js') }}?v=9"></script>
 </body>
 </html>
