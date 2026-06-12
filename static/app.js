@@ -9,15 +9,10 @@ const languageValue = document.getElementById("language-value");
 const themeValue = document.getElementById("theme-value");
 const sampleSelect = document.getElementById("sample_name");
 const statusPill = document.getElementById("preview-status");
-const aspectRatio = document.getElementById("aspect_ratio");
-const widthInput = document.getElementById("width");
-const heightInput = document.getElementById("height");
-const aspectRatioPresets = JSON.parse(document.getElementById("aspect-ratio-data").textContent);
 const samples = JSON.parse(document.getElementById("sample-data").textContent);
 
 let refreshTimer = null;
 let codeEditor = null;
-const aspectRatioByValue = Object.fromEntries(aspectRatioPresets.map((preset) => [preset.value, preset]));
 const customSelects = new Map();
 
 const languageLabels = {
@@ -341,26 +336,6 @@ function initCustomSelects() {
   });
 }
 
-function applyAspectRatioPreset() {
-  const preset = aspectRatioByValue[aspectRatio.value];
-  if (!preset || preset.value === "custom") {
-    return;
-  }
-
-  widthInput.value = preset.width;
-  heightInput.value = preset.height;
-}
-
-function updateAspectRatioFromPixels() {
-  const width = Number(widthInput.value);
-  const height = Number(heightInput.value);
-  const matchingPreset = aspectRatioPresets.find((preset) => {
-    return preset.value !== "custom" && Number(preset.width) === width && Number(preset.height) === height;
-  });
-
-  aspectRatio.value = matchingPreset ? matchingPreset.value : "custom";
-}
-
 function schedulePreview(delay = 450) {
   window.clearTimeout(refreshTimer);
   statusPill.textContent = "Editing";
@@ -386,18 +361,10 @@ function loadSample(sampleName) {
 
 document.querySelectorAll("#studio-form input, #studio-form select, #studio-form textarea, [form='studio-form']").forEach((control) => {
   control.addEventListener("input", () => {
-    if (control === widthInput || control === heightInput) {
-      updateAspectRatioFromPixels();
-    }
     updateHeroControls();
     schedulePreview(control === code ? 650 : 300);
   });
   control.addEventListener("change", () => {
-    if (control === aspectRatio) {
-      applyAspectRatioPreset();
-    } else if (control === widthInput || control === heightInput) {
-      updateAspectRatioFromPixels();
-    }
     updateHeroControls();
     schedulePreview(120);
   });

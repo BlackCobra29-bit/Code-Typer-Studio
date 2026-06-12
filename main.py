@@ -48,7 +48,6 @@ FONTS = [
 ]
 
 ASPECT_RATIOS = [
-    {"value": "custom", "label": "Custom", "width": None, "height": None},
     {"value": "16_9", "label": "16:9 - 1280x720", "width": 1280, "height": 720},
     {"value": "9_16", "label": "9:16 - 720x1280", "width": 720, "height": 1280},
     {"value": "1_1", "label": "1:1 - 1080x1080", "width": 1080, "height": 1080},
@@ -62,6 +61,7 @@ ASPECT_RATIO_DIMENSIONS = {
 }
 
 DEFAULT_SAMPLE = "Python API"
+DEFAULT_ASPECT_RATIO = "16_9"
 PREVIEW_LINE_HEIGHT = 1.28
 
 LANGUAGE_EXTENSIONS = {
@@ -109,7 +109,6 @@ async def index(request: Request) -> HTMLResponse:
             "themes": list(THEMES.keys()),
             "fonts": FONTS,
             "aspect_ratios": ASPECT_RATIOS,
-            "aspect_ratios_json": json.dumps(ASPECT_RATIOS),
             "samples": SAMPLES,
             "samples_json": json.dumps(SAMPLES),
             "default_sample": DEFAULT_SAMPLE,
@@ -184,9 +183,9 @@ def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
         "font_family": FONTS[0],
         "font_size": 18,
         "line_height": 1.55,
-        "aspect_ratio": "custom",
-        "width": 1040,
-        "height": 620,
+        "aspect_ratio": DEFAULT_ASPECT_RATIO,
+        "width": 1280,
+        "height": 720,
         "radius": 12,
         "speed_ms": 24,
         "line_pause_ms": 160,
@@ -203,9 +202,9 @@ def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
 
 async def _payload_from_request(request: Request) -> dict[str, Any]:
     form = await request.form()
-    aspect_ratio = str(form.get("aspect_ratio", "custom"))
-    width = _int(form.get("width"), 1040, 520, 1600)
-    height = _int(form.get("height"), 620, 320, 1400)
+    aspect_ratio = str(form.get("aspect_ratio", DEFAULT_ASPECT_RATIO))
+    width = _int(form.get("width"), 1280, 520, 1600)
+    height = _int(form.get("height"), 720, 320, 1400)
     width, height, aspect_ratio = _apply_aspect_ratio(aspect_ratio, width, height)
 
     return {
@@ -268,7 +267,8 @@ def _bool(value: Any) -> bool:
 def _apply_aspect_ratio(aspect_ratio: str, width: int, height: int) -> tuple[int, int, str]:
     dimensions = ASPECT_RATIO_DIMENSIONS.get(aspect_ratio)
     if dimensions is None:
-        return width, height, "custom"
+        fallback = ASPECT_RATIO_DIMENSIONS[DEFAULT_ASPECT_RATIO]
+        return fallback[0], fallback[1], DEFAULT_ASPECT_RATIO
     return dimensions[0], dimensions[1], aspect_ratio
 
 
