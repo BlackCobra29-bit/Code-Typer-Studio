@@ -16,6 +16,7 @@ const aspectRatioPresets = JSON.parse(document.getElementById("aspect-ratio-data
 const samples = JSON.parse(document.getElementById("sample-data").textContent);
 
 let refreshTimer = null;
+let codeEditor = null;
 const aspectRatioByValue = Object.fromEntries(aspectRatioPresets.map((preset) => [preset.value, preset]));
 const customSelects = new Map();
 
@@ -65,6 +66,29 @@ const languageBadges = {
   yaml: "yaml.svg",
 };
 
+const codeMirrorModes = {
+  bash: "shell",
+  cpp: "text/x-c++src",
+  csharp: "text/x-csharp",
+  css: "css",
+  go: "go",
+  html: "htmlmixed",
+  java: "text/x-java",
+  javascript: "javascript",
+  json: "application/json",
+  jsx: "text/jsx",
+  kotlin: "text/x-kotlin",
+  php: "application/x-httpd-php",
+  python: "python",
+  ruby: "ruby",
+  rust: "rust",
+  sql: "text/x-sql",
+  swift: "swift",
+  tsx: "text/typescript",
+  typescript: "text/typescript",
+  yaml: "yaml",
+};
+
 function fileExtension(sampleLanguage) {
   const extensions = {
     bash: "sh",
@@ -102,6 +126,54 @@ function updateHeroControls() {
   syncCustomSelect(language);
   syncCustomSelect(theme);
   syncCustomSelect(sampleSelect);
+  syncCodeEditorMode();
+}
+
+function codeEditorMode() {
+  return codeMirrorModes[language.value] || "javascript";
+}
+
+function syncCodeEditorMode() {
+  if (!codeEditor) {
+    return;
+  }
+
+  codeEditor.setOption("mode", codeEditorMode());
+}
+
+function setCodeEditorValue(value) {
+  if (!codeEditor) {
+    code.value = value;
+    return;
+  }
+
+  if (codeEditor.getValue() !== value) {
+    codeEditor.setValue(value);
+  }
+}
+
+function initCodeEditor() {
+  if (!window.CodeMirror || !code) {
+    return;
+  }
+
+  codeEditor = CodeMirror.fromTextArea(code, {
+    mode: codeEditorMode(),
+    theme: "light-studio",
+    lineNumbers: true,
+    lineWrapping: true,
+    indentUnit: 2,
+    tabSize: 2,
+    viewportMargin: Infinity,
+  });
+
+  codeEditor.on("change", () => {
+    const nextValue = codeEditor.getValue();
+    if (code.value !== nextValue) {
+      code.value = nextValue;
+      code.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
 }
 
 function customSelectLabel(select, value) {
@@ -305,6 +377,7 @@ function loadSample(sampleName) {
   }
 
   code.value = sample.code;
+  setCodeEditorValue(sample.code);
   language.value = sample.language;
   title.value = `${sampleName.toLowerCase().replaceAll(" ", "-")}.${fileExtension(sample.language)}`;
   updateHeroControls();
@@ -343,4 +416,5 @@ document.body.addEventListener("htmx:responseError", () => {
 });
 
 initCustomSelects();
+initCodeEditor();
 updateHeroControls();

@@ -6,6 +6,46 @@
   <title>Code Typer Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <style>
+    .CodeMirror {
+      height: 14rem;
+      border-radius: 0.375rem;
+      background: #f8fafc;
+      color: #0f172a;
+      font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+      font-size: 0.875rem;
+      line-height: 1.5rem;
+    }
+
+    .CodeMirror-focused {
+      outline: 2px solid rgb(14 165 233 / 0.3);
+      outline-offset: 0;
+    }
+
+    .CodeMirror-gutters {
+      border-right: 1px solid #e2e8f0;
+      background: #f1f5f9;
+    }
+
+    .CodeMirror-linenumber {
+      color: #94a3b8;
+    }
+
+    .cm-s-light-studio .cm-keyword { color: #2563eb; font-weight: 700; }
+    .cm-s-light-studio .cm-def,
+    .cm-s-light-studio .cm-variable-2 { color: #0f766e; }
+    .cm-s-light-studio .cm-variable { color: #0f172a; }
+    .cm-s-light-studio .cm-property { color: #7c3aed; }
+    .cm-s-light-studio .cm-string { color: #b45309; }
+    .cm-s-light-studio .cm-number { color: #dc2626; }
+    .cm-s-light-studio .cm-comment { color: #64748b; font-style: italic; }
+    .cm-s-light-studio .cm-operator { color: #9333ea; }
+    .cm-s-light-studio .cm-builtin,
+    .cm-s-light-studio .cm-atom { color: #0891b2; }
+    .cm-s-light-studio .cm-tag { color: #2563eb; }
+    .cm-s-light-studio .cm-attribute { color: #7c3aed; }
+  </style>
 </head>
 <body class="min-h-screen overflow-x-hidden overflow-y-auto bg-[linear-gradient(rgba(52,64,84,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(52,64,84,0.018)_1px,transparent_1px),radial-gradient(circle_at_20%_14%,rgba(255,232,177,0.72),transparent_34%),radial-gradient(circle_at_86%_18%,rgba(241,161,198,0.42),transparent_38%),linear-gradient(135deg,#fffaf0_0%,#fff4eb_45%,#f8e4ef_100%)] bg-[size:96px_96px,96px_96px,100%_100%,100%_100%,100%_100%] font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica_Neue',sans-serif] text-[#333] antialiased">
   <form id="studio-form" class="min-h-screen" method="post">
@@ -321,6 +361,21 @@
   <script id="aspect-ratio-data" type="application/json">{{ aspect_ratios_json | safe }}</script>
   <script id="sample-data" type="application/json">{{ samples_json | safe }}</script>
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <script src="{{ url_for('static', path='app.js') }}?v=10"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/rust/rust.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/go/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/ruby/ruby.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/php/php.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/shell/shell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/yaml/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/swift/swift.min.js"></script>
+  <script src="{{ url_for('static', path='app.js') }}?v=11"></script>
 </body>
 </html>
