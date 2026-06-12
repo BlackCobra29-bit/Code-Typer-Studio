@@ -12,19 +12,22 @@ from .syntax_style import syntax_color, syntax_palette
 from .themes import THEMES
 
 
+PREVIEW_DISPLAY_WIDTH = 700
+
+
 def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> bytes:
     theme = THEMES.get(options.theme_name, THEMES["VS Code Dark+"])
     width = max(520, min(1600, int(options.width)))
     height = max(320, min(1400, int(options.height)))
-    font_size = max(12, min(32, int(options.font_size)))
+    font_size = _gif_font_size(options.font_size, width)
     line_height = int(font_size * max(1.1, min(2.2, float(options.line_height))))
     chrome_height = 42 if options.show_window_chrome else 0
     gutter_width = 84 if options.show_line_numbers else 30
     content_x = gutter_width + 24
     top_y = chrome_height + 20
     padding_bottom = 24
-    font = _load_font(font_size)
-    small_font = _load_font(max(10, font_size - 3))
+    font = _load_font(options.font_family, font_size)
+    small_font = _load_font(options.font_family, max(10, _gif_font_size(13, width)))
     chars = _token_chars(code or " ", options.language, options.theme_name)
     total = len(chars)
     step = max(1, min(12, int(frame_step)))
@@ -187,13 +190,44 @@ def _lexer(language: str):
         return TextLexer()
 
 
-def _load_font(size: int):
-    candidates = [
-        Path("C:/Windows/Fonts/CascadiaMono.ttf"),
-        Path("C:/Windows/Fonts/consola.ttf"),
-        Path("C:/Windows/Fonts/lucon.ttf"),
-    ]
+def _gif_font_size(font_size: int, frame_width: int) -> int:
+    base_size = max(12, min(32, int(font_size)))
+    scale = max(1.0, frame_width / PREVIEW_DISPLAY_WIDTH)
+    return max(12, min(96, round(base_size * scale)))
+
+
+def _load_font(font_family: str, size: int):
+    candidates = _font_candidates(font_family)
     for path in candidates:
         if path.exists():
             return ImageFont.truetype(str(path), size=size)
     return ImageFont.load_default()
+
+
+def _font_candidates(font_family: str) -> list[Path]:
+    requested_fonts = [item.strip().strip("\"'").lower() for item in font_family.split(",")]
+    font_map = {
+        "cascadia code": [Path("C:/Windows/Fonts/CascadiaCode.ttf"), Path("C:/Windows/Fonts/CascadiaMono.ttf")],
+        "cascadia mono": [Path("C:/Windows/Fonts/CascadiaMono.ttf"), Path("C:/Windows/Fonts/CascadiaCode.ttf")],
+        "consolas": [Path("C:/Windows/Fonts/consola.ttf")],
+        "lucida console": [Path("C:/Windows/Fonts/lucon.ttf")],
+    }
+    fallback = [
+        Path("C:/Windows/Fonts/CascadiaCode.ttf"),
+        Path("C:/Windows/Fonts/CascadiaMono.ttf"),
+        Path("C:/Windows/Fonts/consola.ttf"),
+        Path("C:/Windows/Fonts/lucon.ttf"),
+    ]
+
+    candidates: list[Path] = []
+    for name in requested_fonts:
+        candidates.extend(font_map.get(name, []))
+    candidates.extend(fallback)
+
+    unique_candidates = []
+    seen = set()
+    for path in candidates:
+        if path not in seen:
+            seen.add(path)
+            unique_candidates.append(path)
+    return unique_candidates
