@@ -102,47 +102,55 @@
 
       <section class="mt-12 flex w-full max-w-[843px] flex-col gap-2" aria-label="Studio controls">
         <div class="grid rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100 sm:grid-cols-[1fr_1fr_1.4fr_1fr] sm:gap-2">
-          <label class="group relative block px-0 py-1 sm:px-0">
+          <div class="relative block px-0 py-1 sm:px-0" data-custom-select="language">
             <span class="mb-1 block text-xs font-bold text-[#333]">Language</span>
-            <span class="flex h-8 items-center gap-2 rounded-md bg-gray-100 px-2 text-sm text-slate-700">
+            <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="language-menu">
               <img class="h-5 w-5 object-contain" id="language-icon" src="{{ url_for('static', path='icons/rust.svg') }}" alt="">
               <span class="truncate" id="language-value">{{ values.language|title }}</span>
-              <span class="ml-auto text-xs text-slate-500" aria-hidden="true">v</span>
-            </span>
-            <select class="absolute inset-x-0 bottom-1 h-8 cursor-pointer opacity-0" id="language" name="language">
+              <i class="bi bi-chevron-down ml-auto text-xs text-slate-500" aria-hidden="true"></i>
+            </button>
+            <select class="sr-only" id="language" name="language" tabindex="-1" aria-hidden="true">
               {% for language in languages %}
                 <option value="{{ language }}" {% if values.language == language %}selected{% endif %}>{{ language }}</option>
               {% endfor %}
             </select>
-          </label>
+            <div class="absolute left-0 right-0 top-full z-50 mt-2 hidden max-h-72 overflow-y-auto rounded-xl bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200" id="language-menu" data-select-menu role="listbox"></div>
+          </div>
 
-          <label class="group relative block px-0 py-1 sm:px-0">
+          <div class="relative block px-0 py-1 sm:px-0" data-custom-select="theme_name">
             <span class="mb-1 block text-xs font-bold text-[#333]">Theme</span>
-            <span class="flex h-8 items-center gap-2 rounded-md bg-gray-100 px-2 text-sm text-slate-700">
+            <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="theme-menu">
               <span class="grid h-5 w-5 place-items-center rounded bg-slate-900 text-[9px] font-bold text-white" aria-hidden="true">fn</span>
               <span class="truncate" id="theme-value">{{ values.theme_name }}</span>
-              <span class="ml-auto text-xs text-slate-500" aria-hidden="true">v</span>
-            </span>
-            <select class="absolute inset-x-0 bottom-1 h-8 cursor-pointer opacity-0" id="theme_name" name="theme_name">
+              <i class="bi bi-chevron-down ml-auto text-xs text-slate-500" aria-hidden="true"></i>
+            </button>
+            <select class="sr-only" id="theme_name" name="theme_name" tabindex="-1" aria-hidden="true">
               {% for theme in themes %}
                 <option value="{{ theme }}" {% if values.theme_name == theme %}selected{% endif %}>{{ theme }}</option>
               {% endfor %}
             </select>
-          </label>
+            <div class="absolute left-0 right-0 top-full z-50 mt-2 hidden max-h-72 overflow-y-auto rounded-xl bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200" id="theme-menu" data-select-menu role="listbox"></div>
+          </div>
 
           <label class="block px-0 py-1 sm:px-0">
             <span class="mb-1 block text-xs font-bold text-[#333]">File Name</span>
             <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="title" name="title" value="{{ values.title }}" placeholder="File name">
           </label>
 
-          <label class="block px-0 py-1 sm:px-0">
+          <div class="relative block px-0 py-1 sm:px-0" data-custom-select="sample_name">
             <span class="mb-1 block text-xs font-bold text-[#333]">Sample</span>
-            <select id="sample_name" class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30">
+            <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="sample-menu">
+              <span class="grid h-5 w-5 place-items-center rounded bg-sky-600 text-[10px] font-bold text-white" aria-hidden="true">S</span>
+              <span class="truncate" id="sample-value">{{ samples.keys()|first }}</span>
+              <i class="bi bi-chevron-down ml-auto text-xs text-slate-500" aria-hidden="true"></i>
+            </button>
+            <select id="sample_name" class="sr-only" tabindex="-1" aria-hidden="true">
               {% for name in samples %}
                 <option value="{{ name }}" {% if loop.first %}selected{% endif %}>{{ name }}</option>
               {% endfor %}
             </select>
-          </label>
+            <div class="absolute left-0 right-0 top-full z-50 mt-2 hidden max-h-72 overflow-y-auto rounded-xl bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200" id="sample-menu" data-select-menu role="listbox"></div>
+          </div>
         </div>
 
         <section class="rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100" id="editor" aria-label="Code editor">
