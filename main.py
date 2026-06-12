@@ -63,6 +63,7 @@ ASPECT_RATIO_DIMENSIONS = {
 DEFAULT_SAMPLE = "Python API"
 DEFAULT_ASPECT_RATIO = "16_9"
 PREVIEW_LINE_HEIGHT = 1.28
+GIF_FRAME_STEP = 3
 
 LANGUAGE_EXTENSIONS = {
     "bash": "sh",
@@ -163,7 +164,7 @@ async def download_gif(request: Request) -> Response:
     gif_bytes = build_typing_gif(
         values.get("code", ""),
         options,
-        frame_step=_int(values.get("gif_step"), 3, 1, 10),
+        frame_step=GIF_FRAME_STEP,
     )
     return Response(
         gif_bytes,
@@ -196,7 +197,7 @@ def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
         "autoplay": True,
         "loop": False,
         "cursor": "bar",
-        "gif_step": 3,
+        "gif_step": GIF_FRAME_STEP,
     }
 
 
@@ -228,7 +229,7 @@ async def _payload_from_request(request: Request) -> dict[str, Any]:
         "autoplay": _bool(form.get("autoplay")),
         "loop": _bool(form.get("loop")),
         "cursor": str(form.get("cursor", "bar")),
-        "gif_step": _int(form.get("gif_step"), 3, 1, 10),
+        "gif_step": GIF_FRAME_STEP,
     }
 
 
