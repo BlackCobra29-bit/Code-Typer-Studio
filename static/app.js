@@ -232,7 +232,7 @@ function initCustomSelect(select) {
     optionButton.innerHTML = `
       ${customSelectIcon(select, option.value)}
       <span class="min-w-0 flex-1 truncate">${customSelectLabel(select, option.value)}</span>
-      <i class="bi bi-check-lg text-base text-blue-600 opacity-0" data-select-check aria-hidden="true"></i>
+      <span class="material-icons text-base text-blue-600 opacity-0" data-select-check aria-hidden="true">check</span>
     `;
     optionButton.addEventListener("click", () => {
       setCustomSelectValue(select, option.value);

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Code Typer Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body class="min-h-screen overflow-x-hidden overflow-y-auto bg-[linear-gradient(rgba(52,64,84,0.018)_1px,transparent_1px),linear-gradient(90deg,rgba(52,64,84,0.018)_1px,transparent_1px),radial-gradient(circle_at_20%_14%,rgba(255,232,177,0.72),transparent_34%),radial-gradient(circle_at_86%_18%,rgba(241,161,198,0.42),transparent_38%),linear-gradient(135deg,#fffaf0_0%,#fff4eb_45%,#f8e4ef_100%)] bg-[size:96px_96px,96px_96px,100%_100%,100%_100%,100%_100%] font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica_Neue',sans-serif] text-[#333] antialiased">
   <form id="studio-form" class="min-h-screen" method="post">
@@ -28,15 +28,15 @@
 
       <nav class="hidden items-center gap-7 text-sm font-semibold text-slate-700 sm:flex" aria-label="Main navigation">
         <a class="inline-flex items-center gap-2 transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="/">
-          <i class="bi bi-house-door text-base" aria-hidden="true"></i>
+          <span class="material-icons text-base" aria-hidden="true">home</span>
           Home
         </a>
         <a class="inline-flex items-center gap-2 transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="#about">
-          <i class="bi bi-info-circle text-base" aria-hidden="true"></i>
+          <span class="material-icons text-base" aria-hidden="true">info</span>
           About Us
         </a>
         <a class="inline-flex items-center gap-2 transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="#contact">
-          <i class="bi bi-envelope text-base" aria-hidden="true"></i>
+          <span class="material-icons text-base" aria-hidden="true">mail</span>
           Contact Us
         </a>
       </nav>
@@ -47,15 +47,15 @@
         </summary>
         <nav class="absolute right-0 top-12 z-20 grid w-44 gap-1 rounded-xl bg-white/90 p-2 text-sm font-semibold text-slate-700 shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/10 backdrop-blur" aria-label="Mobile navigation">
           <a class="inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="/">
-            <i class="bi bi-house-door text-base" aria-hidden="true"></i>
+            <span class="material-icons text-base" aria-hidden="true">home</span>
             Home
           </a>
           <a class="inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="#about">
-            <i class="bi bi-info-circle text-base" aria-hidden="true"></i>
+            <span class="material-icons text-base" aria-hidden="true">info</span>
             About Us
           </a>
           <a class="inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="#contact">
-            <i class="bi bi-envelope text-base" aria-hidden="true"></i>
+            <span class="material-icons text-base" aria-hidden="true">mail</span>
             Contact Us
           </a>
         </nav>
@@ -83,7 +83,7 @@
             Get started
           </a>
           <a class="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-slate-300 bg-white/55 px-4 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-white/80 focus:outline-none focus:ring-4 focus:ring-slate-900/10 sm:h-14 sm:gap-3 sm:px-7 sm:text-base" href="#preview">
-            <i class="bi bi-play-fill text-lg text-blue-600 sm:text-xl" aria-hidden="true"></i>
+            <span class="material-icons text-lg text-blue-600 sm:text-xl" aria-hidden="true">play_arrow</span>
             Watch video
           </a>
         </div>
@@ -107,7 +107,7 @@
             <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="language-menu">
               <img class="h-5 w-5 object-contain" id="language-icon" src="{{ url_for('static', path='icons/rust.svg') }}" alt="">
               <span class="truncate" id="language-value">{{ values.language|title }}</span>
-              <i class="bi bi-chevron-down ml-auto text-xs text-slate-500" aria-hidden="true"></i>
+              <span class="material-icons ml-auto text-base text-slate-500" aria-hidden="true">keyboard_arrow_down</span>
             </button>
             <select class="sr-only" id="language" name="language" tabindex="-1" aria-hidden="true">
               {% for language in languages %}
@@ -122,7 +122,7 @@
             <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="theme-menu">
               <span class="grid h-5 w-5 place-items-center rounded bg-slate-900 text-[9px] font-bold text-white" aria-hidden="true">fn</span>
               <span class="truncate" id="theme-value">{{ values.theme_name }}</span>
-              <i class="bi bi-chevron-down ml-auto text-xs text-slate-500" aria-hidden="true"></i>
+              <span class="material-icons ml-auto text-base text-slate-500" aria-hidden="true">keyboard_arrow_down</span>
             </button>
             <select class="sr-only" id="theme_name" name="theme_name" tabindex="-1" aria-hidden="true">
               {% for theme in themes %}
@@ -142,7 +142,7 @@
             <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="sample-menu">
               <span class="grid h-5 w-5 place-items-center" data-select-icon aria-hidden="true"></span>
               <span class="truncate" id="sample-value">{{ default_sample }}</span>
-              <i class="bi bi-chevron-down ml-auto text-xs text-slate-500" aria-hidden="true"></i>
+              <span class="material-icons ml-auto text-base text-slate-500" aria-hidden="true">keyboard_arrow_down</span>
             </button>
             <select id="sample_name" class="sr-only" tabindex="-1" aria-hidden="true">
               {% for name in samples %}
@@ -309,6 +309,6 @@
   <script id="aspect-ratio-data" type="application/json">{{ aspect_ratios_json | safe }}</script>
   <script id="sample-data" type="application/json">{{ samples_json | safe }}</script>
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <script src="{{ url_for('static', path='app.js') }}?v=9"></script>
+  <script src="{{ url_for('static', path='app.js') }}?v=10"></script>
 </body>
 </html>
