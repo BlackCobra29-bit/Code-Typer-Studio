@@ -62,6 +62,7 @@ ASPECT_RATIO_DIMENSIONS = {
 }
 
 DEFAULT_SAMPLE = "Python API"
+PREVIEW_LINE_HEIGHT = 1.28
 
 LANGUAGE_EXTENSIONS = {
     "bash": "sh",
@@ -256,7 +257,8 @@ def _options_from_payload(values: dict[str, Any]):
 
 
 def _build_preview(values: dict[str, Any]) -> str:
-    return build_typing_html(values.get("code", ""), _options_from_payload(values), standalone=False)
+    preview_values = {**values, "line_height": PREVIEW_LINE_HEIGHT}
+    return build_typing_html(values.get("code", ""), _options_from_payload(preview_values), standalone=False)
 
 
 def _bool(value: Any) -> bool:
