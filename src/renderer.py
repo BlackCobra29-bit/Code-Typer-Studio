@@ -452,6 +452,8 @@ body.embedded .editor-window {
   justify-content: center;
   color: var(--plus);
   background: var(--gutter-bg);
+  opacity: 0;
+  transition: opacity 120ms ease;
   user-select: none;
 }
 
@@ -462,7 +464,14 @@ body.embedded .editor-window {
   padding-right: 18px;
   color: var(--muted);
   background: var(--gutter-bg);
+  opacity: 0;
+  transition: opacity 120ms ease;
   user-select: none;
+}
+
+.code-line.line-started .diff-mark,
+.code-line.line-started .line-number {
+  opacity: 1;
 }
 
 .line-content {
@@ -612,6 +621,7 @@ body.embedded .editor-window {
     root.querySelectorAll(".code-line.active").forEach((item) => item.classList.remove("active"));
     if (line) {
       line.classList.add("active");
+      line.classList.add("line-started");
     }
   }
 
@@ -703,6 +713,7 @@ body.embedded .editor-window {
     pause();
     index = 0;
     chars.forEach((char) => char.classList.remove("visible"));
+    root.querySelectorAll(".code-line.line-started").forEach((line) => line.classList.remove("line-started"));
     placeCursor();
     updateProgress();
   }

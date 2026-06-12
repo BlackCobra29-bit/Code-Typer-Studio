@@ -123,6 +123,8 @@ def _draw_frame(
         y = top_y + (visible_line - first_line) * line_height
         if visible_line == active_line:
             draw.rectangle((0, y, width, y + line_height), fill=theme["active"])
+        if visible_line > active_line:
+            continue
         if options.show_diff_gutter:
             draw.text((18, y + 1), "+", font=font, fill=theme["plus"])
         if options.show_line_numbers:
