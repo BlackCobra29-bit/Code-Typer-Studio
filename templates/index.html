@@ -62,8 +62,8 @@
       </details>
     </header>
 
-    <main class="mx-auto flex w-full max-w-[1265px] flex-col items-center px-4 pb-16 pt-10 sm:pt-14 lg:pt-16">
-      <section class="mb-10 w-full max-w-[1040px] text-center" aria-labelledby="hero-title">
+    <main class="mx-auto flex w-full max-w-[1265px] flex-col items-center px-4 pb-16">
+      <section class="flex min-h-[calc(100vh-4rem)] w-full max-w-[1040px] flex-col items-center justify-center py-12 text-center" aria-labelledby="hero-title">
         <p class="mb-4 text-sm font-bold uppercase tracking-[0.24em] text-slate-500">Code Typer Studio</p>
         <h1 id="hero-title" class="mx-auto max-w-[1000px] text-5xl font-black leading-[0.98] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
           Turn code into
@@ -78,9 +78,18 @@
         <p class="mx-auto mt-7 max-w-[760px] text-lg font-medium leading-8 text-slate-700 sm:text-xl">
           Build polished code previews, customize the editor style, and export your animation as HTML, JSON, or GIF.
         </p>
+        <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <a class="inline-flex h-14 items-center justify-center rounded-full bg-slate-950 px-8 text-base font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20" href="#preview">
+            Get started
+          </a>
+          <a class="inline-flex h-14 items-center justify-center gap-3 rounded-full border border-slate-300 bg-white/55 px-7 text-base font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-white/80 focus:outline-none focus:ring-4 focus:ring-slate-900/10" href="#preview">
+            <i class="bi bi-play-fill text-xl text-blue-600" aria-hidden="true"></i>
+            Watch video
+          </a>
+        </div>
       </section>
 
-      <section class="flex w-full justify-center" id="preview" aria-label="Animation preview">
+      <section class="flex w-full scroll-mt-8 justify-center" id="preview" aria-label="Animation preview">
         <div class="w-full max-w-[700px]">
           <div class="relative overflow-hidden">
             <div id="preview-panel" class="h-[300px] min-w-0 overflow-hidden bg-white">
