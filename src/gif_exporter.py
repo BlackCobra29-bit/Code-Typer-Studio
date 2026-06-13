@@ -14,8 +14,6 @@ from .themes import THEMES
 
 
 PREVIEW_DISPLAY_WIDTH = 700
-MAX_GIF_FRAMES = 8
-FINAL_HOLD_FRAMES = 1
 
 
 def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> bytes:
@@ -33,9 +31,11 @@ def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> 
     small_font = _load_font(options.font_family, max(10, _gif_font_size(13, width)))
     chars = _token_chars(code or " ", options.language, options.theme_name)
     total = len(chars)
-    counts = _sample_counts(total, frame_step)
-    line_count = max(1, len((code or " ").split("\n")))
-    line_ranges = _line_ranges(chars, line_count)
+    step = max(1, min(12, int(frame_step)))
+    counts = list(range(0, total + 1, step))
+    if not counts or counts[-1] != total:
+        counts.append(total)
+
     max_visible_lines = max(1, (height - chrome_height - padding_bottom) // line_height)
     frames = []
     for visible_count in counts:
@@ -48,8 +48,7 @@ def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> 
                 first_line=first_line,
                 max_visible_lines=max_visible_lines,
                 active_line=active_line,
-                line_count=line_count,
-                line_ranges=line_ranges,
+                code=code,
                 width=width,
                 height=height,
                 line_height=line_height,
@@ -65,10 +64,10 @@ def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> 
         )
 
     if frames:
-        frames.extend([frames[-1].copy() for _ in range(FINAL_HOLD_FRAMES)])
+        frames.extend([frames[-1].copy() for _ in range(6)])
 
     output = BytesIO()
-    duration = _frame_duration(options.speed_ms, total, len(counts))
+    duration = max(20, min(250, int(options.speed_ms) * step))
     frames[0].save(
         output,
         format="GIF",
@@ -88,8 +87,7 @@ def _draw_frame(
     first_line: int,
     max_visible_lines: int,
     active_line: int,
-    line_count: int,
-    line_ranges: list[tuple[int, int]],
+    code: str,
     width: int,
     height: int,
     line_height: int,
@@ -117,8 +115,10 @@ def _draw_frame(
 
     draw.rectangle((0, chrome_height, gutter_width, height), fill=theme["gutter_bg"])
 
+    visible_chars = chars[:visible_count]
     cursor_x = content_x
     cursor_y = top_y
+    line_count = max(1, len(code.split("\n")))
 
     for visible_line in range(first_line, min(line_count, first_line + max_visible_lines)):
         y = top_y + (visible_line - first_line) * line_height
@@ -133,31 +133,17 @@ def _draw_frame(
             number_width = draw.textlength(number, font=font)
             draw.text((gutter_width - number_width - 14, y + 1), number, font=font, fill=theme["muted"])
 
-    for line in range(first_line, min(line_count, first_line + max_visible_lines)):
-        start, end = line_ranges[line]
-        end = min(end, visible_count)
-        if end <= start:
+    line_x = {}
+    for char in visible_chars:
+        line = char["line"]
+        if line < first_line or line >= first_line + max_visible_lines:
             continue
         y = top_y + (line - first_line) * line_height
-        x = content_x
-        current_color = None
-        text_run = []
-        for char in chars[start:end]:
-            if char["text"] != "\n":
-                if current_color is None:
-                    current_color = char["color"]
-                if char["color"] != current_color:
-                    text = "".join(text_run)
-                    draw.text((x, y + 1), text, font=font, fill=current_color)
-                    x += draw.textlength(text, font=font)
-                    text_run = []
-                    current_color = char["color"]
-                text_run.append(char["text"])
-        if text_run:
-            text = "".join(text_run)
-            draw.text((x, y + 1), text, font=font, fill=current_color)
-            x += draw.textlength(text, font=font)
-        if line == active_line:
+        x = line_x.get(line, content_x)
+        if char["text"] != "\n":
+            draw.text((x, y + 1), char["text"], font=font, fill=char["color"])
+            x += draw.textlength(char["text"], font=font)
+            line_x[line] = x
             cursor_x = x
             cursor_y = y
 
@@ -195,54 +181,9 @@ def _token_chars(code: str, language: str, theme_name: str) -> list[dict]:
 def _active_line(chars: list[dict], visible_count: int) -> int:
     if visible_count <= 0:
         return 0
-    for index in range(min(visible_count, len(chars)) - 1, -1, -1):
-        return chars[index]["line"]
+    for char in reversed(chars[:visible_count]):
+        return char["line"]
     return 0
-
-
-def _sample_counts(total: int, frame_step: int) -> list[int]:
-    if total <= 0:
-        return [0]
-
-    requested_step = max(1, int(frame_step))
-    frame_count = min(MAX_GIF_FRAMES, max(2, (total // requested_step) + 1))
-    if frame_count <= 2:
-        return [0, total]
-
-    counts = [round(total * index / (frame_count - 1)) for index in range(frame_count)]
-    counts[0] = 0
-    counts[-1] = total
-    deduped = []
-    for count in counts:
-        count = max(0, min(total, count))
-        if not deduped or deduped[-1] != count:
-            deduped.append(count)
-    if deduped[-1] != total:
-        deduped.append(total)
-    return deduped
-
-
-def _line_ranges(chars: list[dict], line_count: int) -> list[tuple[int, int]]:
-    ranges = [(0, 0) for _ in range(line_count)]
-    line_start = 0
-    current_line = 0
-    for index, char in enumerate(chars):
-        if char["text"] == "\n":
-            if current_line < line_count:
-                ranges[current_line] = (line_start, index + 1)
-            current_line += 1
-            line_start = index + 1
-    if current_line < line_count:
-        ranges[current_line] = (line_start, len(chars))
-    return ranges
-
-
-def _frame_duration(speed_ms: int, total_chars: int, frame_count: int) -> int:
-    if frame_count <= 1:
-        return max(20, min(250, int(speed_ms)))
-
-    playback_ms = max(1400, min(4200, total_chars * max(4, min(120, int(speed_ms))) // 3))
-    return max(20, min(180, playback_ms // frame_count))
 
 
 def _lexer(language: str):
