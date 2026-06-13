@@ -432,3 +432,4 @@ for language, config in LANGUAGE_CATALOG.items():
         ICON_BY_FILENAME.setdefault(filename.lower(), icon)
 
 ICON_BY_EXTENSION[".rs"] = "rust-white.svg"
+ICON_BY_EXTENSION[".bash"] = "bash-white.svg"
