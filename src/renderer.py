@@ -13,70 +13,18 @@ from pygments.formatters import HtmlFormatter
 from pygments.lexers import TextLexer, get_lexer_by_name
 from pygments.util import ClassNotFound
 
+from .languages import (
+    ICON_BY_EXTENSION,
+    ICON_BY_FILENAME,
+    ICON_BY_LANGUAGE,
+    LANGUAGE_LEXERS,
+)
 from .syntax_style import syntax_css
 from .themes import THEMES
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 ICON_DIR = BASE_DIR / "static" / "icons"
-
-ICON_BY_EXTENSION = {
-    ".bash": "bash.svg",
-    ".c": "cplusplus.svg",
-    ".cc": "cplusplus.svg",
-    ".cpp": "cplusplus.svg",
-    ".cs": "csharp.svg",
-    ".css": "css.svg",
-    ".go": "go.svg",
-    ".h": "cplusplus.svg",
-    ".hpp": "cplusplus.svg",
-    ".html": "html.svg",
-    ".java": "java.svg",
-    ".javascript": "javascript.svg",
-    ".js": "javascript.svg",
-    ".json": "json.svg",
-    ".jsx": "react.svg",
-    ".kt": "kotlin.svg",
-    ".kts": "kotlin.svg",
-    ".php": "php.svg",
-    ".python": "python.svg",
-    ".py": "python.svg",
-    ".rb": "ruby.svg",
-    ".rs": "rust.svg",
-    ".rust": "rust.svg",
-    ".sh": "bash.svg",
-    ".sql": "postgresql.svg",
-    ".swift": "swift.svg",
-    ".ts": "typescript.svg",
-    ".typescript": "typescript.svg",
-    ".tsx": "react.svg",
-    ".yaml": "yaml.svg",
-    ".yml": "yaml.svg",
-}
-
-ICON_BY_LANGUAGE = {
-    "bash": "bash.svg",
-    "cpp": "cplusplus.svg",
-    "csharp": "csharp.svg",
-    "css": "css.svg",
-    "go": "go.svg",
-    "html": "html.svg",
-    "java": "java.svg",
-    "javascript": "javascript.svg",
-    "json": "json.svg",
-    "jsx": "react.svg",
-    "kotlin": "kotlin.svg",
-    "php": "php.svg",
-    "python": "python.svg",
-    "ruby": "ruby.svg",
-    "rust": "rust.svg",
-    "sql": "postgresql.svg",
-    "swift": "swift.svg",
-    "tsx": "react.svg",
-    "typescript": "typescript.svg",
-    "yaml": "yaml.svg",
-}
-
 
 @dataclass(frozen=True)
 class RenderOptions:
@@ -215,8 +163,10 @@ def _highlighted_code_lines(
 
 
 def _lexer(language: str):
+    language_key = (language or "").strip().lower()
+    lexer_name = LANGUAGE_LEXERS.get(language_key, language_key or "text")
     try:
-        return get_lexer_by_name(language.strip() or "text")
+        return get_lexer_by_name(lexer_name)
     except ClassNotFound:
         return TextLexer()
 
@@ -228,6 +178,10 @@ def _cursor_class(cursor: str) -> str:
 
 
 def _file_icon_alt(title: str, language: str) -> str:
+    filename = Path(title or "").name
+    if filename.lower() in ICON_BY_FILENAME:
+        return f"{filename} file icon"
+
     extension = Path(title or "").suffix.lower().lstrip(".")
     if extension:
         return f"{extension} file icon"
@@ -240,6 +194,10 @@ def _file_icon_src(title: str, language: str) -> str:
 
 
 def _file_icon_name(title: str, language: str) -> str:
+    filename = Path(title or "").name.lower()
+    if filename in ICON_BY_FILENAME:
+        return ICON_BY_FILENAME[filename]
+
     extension = Path(title or "").suffix.lower()
     if extension in ICON_BY_EXTENSION:
         return ICON_BY_EXTENSION[extension]

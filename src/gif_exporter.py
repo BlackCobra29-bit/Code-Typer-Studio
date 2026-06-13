@@ -7,6 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 from pygments.lexers import TextLexer, get_lexer_by_name
 from pygments.util import ClassNotFound
 
+from .languages import LANGUAGE_LEXERS
 from .renderer import RenderOptions
 from .syntax_style import syntax_color, syntax_palette
 from .themes import THEMES
@@ -186,8 +187,10 @@ def _active_line(chars: list[dict], visible_count: int) -> int:
 
 
 def _lexer(language: str):
+    language_key = (language or "").strip().lower()
+    lexer_name = LANGUAGE_LEXERS.get(language_key, language_key or "text")
     try:
-        return get_lexer_by_name(language.strip() or "text")
+        return get_lexer_by_name(lexer_name)
     except ClassNotFound:
         return TextLexer()
 

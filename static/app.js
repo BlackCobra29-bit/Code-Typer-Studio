@@ -9,106 +9,28 @@ const languageValue = document.getElementById("language-value");
 const themeValue = document.getElementById("theme-value");
 const sampleSelect = document.getElementById("sample_name");
 const statusPill = document.getElementById("preview-status");
+const languageCatalog = JSON.parse(document.getElementById("language-catalog").textContent);
 const samples = JSON.parse(document.getElementById("sample-data").textContent);
 
 let refreshTimer = null;
 let codeEditor = null;
 const customSelects = new Map();
 
-const languageLabels = {
-  bash: "Bash",
-  cpp: "C++",
-  csharp: "C#",
-  css: "CSS",
-  go: "Go",
-  html: "HTML",
-  java: "Java",
-  javascript: "JavaScript",
-  json: "JSON",
-  jsx: "JSX",
-  kotlin: "Kotlin",
-  php: "PHP",
-  python: "Python",
-  ruby: "Ruby",
-  rust: "Rust",
-  sql: "SQL",
-  swift: "Swift",
-  tsx: "TSX",
-  typescript: "TypeScript",
-  yaml: "YAML",
-};
-
-const languageBadges = {
-  bash: "bash.svg",
-  cpp: "cplusplus.svg",
-  csharp: "csharp.svg",
-  css: "css.svg",
-  go: "go.svg",
-  html: "html.svg",
-  java: "java.svg",
-  javascript: "javascript.svg",
-  json: "json.svg",
-  jsx: "react.svg",
-  kotlin: "kotlin.svg",
-  php: "php.svg",
-  python: "python.svg",
-  ruby: "ruby.svg",
-  rust: "rust.svg",
-  sql: "postgresql.svg",
-  swift: "swift.svg",
-  tsx: "react.svg",
-  typescript: "typescript.svg",
-  yaml: "yaml.svg",
-};
-
-const codeMirrorModes = {
-  bash: "shell",
-  cpp: "text/x-c++src",
-  csharp: "text/x-csharp",
-  css: "css",
-  go: "go",
-  html: "htmlmixed",
-  java: "text/x-java",
-  javascript: "javascript",
-  json: "application/json",
-  jsx: "text/jsx",
-  kotlin: "text/x-kotlin",
-  php: "application/x-httpd-php",
-  python: "python",
-  ruby: "ruby",
-  rust: "rust",
-  sql: "text/x-sql",
-  swift: "swift",
-  tsx: "text/typescript",
-  typescript: "text/typescript",
-  yaml: "yaml",
-};
+const languageLabels = Object.fromEntries(
+  Object.entries(languageCatalog).map(([languageKey, config]) => [languageKey, config.label || languageKey]),
+);
+const languageBadges = Object.fromEntries(
+  Object.entries(languageCatalog).map(([languageKey, config]) => [languageKey, config.icon || "json.svg"]),
+);
+const languageExtensions = Object.fromEntries(
+  Object.entries(languageCatalog).map(([languageKey, config]) => [languageKey, config.extension || languageKey]),
+);
+const codeMirrorModes = Object.fromEntries(
+  Object.entries(languageCatalog).map(([languageKey, config]) => [languageKey, config.codemirror_mode || "text/plain"]),
+);
 
 function fileExtension(sampleLanguage) {
-  const extensions = {
-    bash: "sh",
-    cpp: "cpp",
-    csharp: "cs",
-    css: "css",
-    go: "go",
-    html: "html",
-    java: "java",
-    javascript: "js",
-    json: "json",
-    jsx: "jsx",
-    kotlin: "kt",
-    php: "php",
-    python: "py",
-    ruby: "rb",
-    rust: "rs",
-    sql: "sql",
-    swift: "swift",
-    tsx: "tsx",
-    typescript: "ts",
-    yaml: "yaml",
-  };
-
-  return extensions[sampleLanguage] || sampleLanguage;
+  return languageExtensions[sampleLanguage] || sampleLanguage;
 }
 
 function updateHeroControls() {

@@ -11,33 +11,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from src.gif_exporter import build_typing_gif
+from src.languages import LANGUAGE_CATALOG, LANGUAGE_EXTENSIONS, LANGUAGES
 from src.renderer import build_typing_html, export_project_json, make_render_options
 from src.samples import SAMPLES
 from src.themes import THEMES
 
-
-LANGUAGES = [
-    "python",
-    "javascript",
-    "typescript",
-    "tsx",
-    "jsx",
-    "rust",
-    "go",
-    "java",
-    "csharp",
-    "cpp",
-    "php",
-    "ruby",
-    "swift",
-    "kotlin",
-    "html",
-    "css",
-    "sql",
-    "bash",
-    "json",
-    "yaml",
-]
 
 FONTS = [
     "Cascadia Code, Fira Code, Consolas, monospace",
@@ -65,30 +43,6 @@ DEFAULT_ASPECT_RATIO = "16_9"
 PREVIEW_LINE_HEIGHT = 1.28
 GIF_FRAME_STEP = 3
 
-LANGUAGE_EXTENSIONS = {
-    "bash": "sh",
-    "cpp": "cpp",
-    "csharp": "cs",
-    "css": "css",
-    "go": "go",
-    "html": "html",
-    "java": "java",
-    "javascript": "js",
-    "json": "json",
-    "jsx": "jsx",
-    "kotlin": "kt",
-    "php": "php",
-    "python": "py",
-    "ruby": "rb",
-    "rust": "rs",
-    "sql": "sql",
-    "swift": "swift",
-    "tsx": "tsx",
-    "typescript": "ts",
-    "yaml": "yaml",
-}
-
-
 BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI(title="Code Typer Studio")
@@ -107,6 +61,7 @@ async def index(request: Request) -> HTMLResponse:
         "index.html",
         {
             "languages": LANGUAGES,
+            "language_catalog": LANGUAGE_CATALOG,
             "themes": list(THEMES.keys()),
             "fonts": FONTS,
             "aspect_ratios": ASPECT_RATIOS,
