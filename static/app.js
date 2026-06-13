@@ -297,7 +297,7 @@ function initCustomSelect(select) {
     optionButton.setAttribute("role", "option");
     optionButton.innerHTML = `
       ${customSelectIcon(select, option.value)}
-      <span class="min-w-0 flex-1 truncate">${customSelectLabel(select, option.value)}</span>
+      <span class="flex-1 whitespace-nowrap">${customSelectLabel(select, option.value)}</span>
     `;
     optionButton.addEventListener("click", () => {
       setCustomSelectValue(select, option.value);
