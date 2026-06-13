@@ -15,7 +15,7 @@ from .themes import THEMES
 
 PREVIEW_DISPLAY_WIDTH = 700
 MAX_GIF_FRAMES = 8
-FINAL_HOLD_STEPS = 6
+FINAL_HOLD_FRAMES = 1
 
 
 def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> bytes:
@@ -64,20 +64,22 @@ def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> 
             )
         )
 
+    if frames:
+        frames.extend([frames[-1].copy() for _ in range(FINAL_HOLD_FRAMES)])
+
     output = BytesIO()
-    durations = _frame_durations(counts, options.speed_ms, frame_step)
-    for frame, duration in zip(frames, durations):
-        frame.info["duration"] = duration
+    duration = _frame_duration(options.speed_ms, total, len(counts))
     frames[0].save(
         output,
         format="GIF",
         save_all=True,
         append_images=frames[1:],
         optimize=False,
+        duration=duration,
         loop=0 if options.loop else 1,
         disposal=2,
     )
-    return _patch_gif_durations(output.getvalue(), durations)
+    return output.getvalue()
 
 
 def _draw_frame(
@@ -235,35 +237,12 @@ def _line_ranges(chars: list[dict], line_count: int) -> list[tuple[int, int]]:
     return ranges
 
 
-def _frame_durations(counts: list[int], speed_ms: int, frame_step: int) -> list[int]:
-    speed = max(4, min(120, int(speed_ms)))
-    step = max(1, min(12, int(frame_step)))
-    durations = []
-    for index, count in enumerate(counts):
-        if index + 1 < len(counts):
-            next_count = counts[index + 1]
-            durations.append(max(20, (next_count - count) * speed))
-        else:
-            durations.append(max(20, step * speed * FINAL_HOLD_STEPS))
-    return durations
+def _frame_duration(speed_ms: int, total_chars: int, frame_count: int) -> int:
+    if frame_count <= 1:
+        return max(20, min(250, int(speed_ms)))
 
-
-def _patch_gif_durations(gif_bytes: bytes, durations_ms: list[int]) -> bytes:
-    # Pillow writes the last delay to every frame in this environment, so patch GCE delays directly.
-    data = bytearray(gif_bytes)
-    duration_index = 0
-    offset = 0
-    marker = b"\x21\xf9\x04"
-    while duration_index < len(durations_ms):
-        offset = data.find(marker, offset)
-        if offset < 0:
-            break
-        delay = max(2, min(65535, round(durations_ms[duration_index] / 10)))
-        data[offset + 4] = delay & 0xFF
-        data[offset + 5] = (delay >> 8) & 0xFF
-        duration_index += 1
-        offset += len(marker)
-    return bytes(data)
+    playback_ms = max(1400, min(4200, total_chars * max(4, min(120, int(speed_ms))) // 3))
+    return max(20, min(180, playback_ms // frame_count))
 
 
 def _lexer(language: str):
