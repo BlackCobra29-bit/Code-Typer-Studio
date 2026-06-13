@@ -260,7 +260,6 @@ function syncCustomSelect(select) {
     optionButton.setAttribute("aria-selected", String(isSelected));
     optionButton.classList.toggle("bg-slate-50", isSelected);
     optionButton.classList.toggle("font-bold", isSelected);
-    optionButton.querySelector("[data-select-check]").classList.toggle("opacity-0", !isSelected);
   });
 }
 
@@ -299,7 +298,6 @@ function initCustomSelect(select) {
     optionButton.innerHTML = `
       ${customSelectIcon(select, option.value)}
       <span class="min-w-0 flex-1 truncate">${customSelectLabel(select, option.value)}</span>
-      <span class="material-icons text-base text-blue-600 opacity-0" data-select-check aria-hidden="true">check</span>
     `;
     optionButton.addEventListener("click", () => {
       setCustomSelectValue(select, option.value);

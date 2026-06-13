@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Code Typer Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
   <style>
     .CodeMirror {
@@ -67,15 +66,12 @@
 
       <nav class="ml-24 hidden items-center gap-7 text-base font-semibold text-slate-700 sm:flex" aria-label="Main navigation">
         <a class="inline-flex items-center gap-2 transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="/">
-          <span class="material-icons text-base" aria-hidden="true">home</span>
           Home
         </a>
         <a class="inline-flex items-center gap-2 transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="#about">
-          <span class="material-icons text-base" aria-hidden="true">info</span>
           About Us
         </a>
         <a class="inline-flex items-center gap-2 transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="#contact">
-          <span class="material-icons text-base" aria-hidden="true">mail</span>
           Contact Us
         </a>
       </nav>
@@ -92,15 +88,12 @@
         </summary>
         <nav class="absolute right-0 top-12 z-20 grid w-44 gap-1 rounded-xl bg-white/90 p-2 text-base font-semibold text-slate-700 shadow-xl shadow-slate-900/10 ring-1 ring-slate-900/10 backdrop-blur" aria-label="Mobile navigation">
           <a class="inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="/">
-            <span class="material-icons text-base" aria-hidden="true">home</span>
             Home
           </a>
           <a class="inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="#about">
-            <span class="material-icons text-base" aria-hidden="true">info</span>
             About Us
           </a>
           <a class="inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="#contact">
-            <span class="material-icons text-base" aria-hidden="true">mail</span>
             Contact Us
           </a>
           <a class="inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="https://github.com/BlackCobra29-bit/Code-Typer-Studio" target="_blank" rel="noopener noreferrer" aria-label="Code Typer Studio GitHub repository">
@@ -126,14 +119,13 @@
           in seconds.
         </h1>
         <p class="mx-auto mt-7 max-w-[760px] text-lg font-medium leading-8 text-slate-700 sm:text-xl">
-          A modern code-typing simulator for creators, developers, and educators to design beautiful animated previews for tutorials, demos, and programming videos.
+          Modern code-typing simulator tool for content creators, developers, and educators.
         </p>
         <div class="mt-10 flex flex-row items-center justify-center gap-3">
           <a class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-full bg-slate-950 px-5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20 sm:h-11 sm:px-8 sm:text-base" href="#preview">
             Get started
           </a>
           <a class="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-slate-300 bg-white/55 px-4 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-white/80 focus:outline-none focus:ring-4 focus:ring-slate-900/10 sm:h-11 sm:gap-3 sm:px-7 sm:text-base" href="#preview">
-            <span class="material-icons text-lg text-blue-600 sm:text-xl" aria-hidden="true">play_arrow</span>
             Watch video
           </a>
         </div>
@@ -171,7 +163,6 @@
             <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="language-menu">
               <img class="h-5 w-5 object-contain" id="language-icon" src="{{ url_for('static', path='icons/rust.svg') }}" alt="">
               <span class="truncate" id="language-value">{{ values.language|title }}</span>
-              <span class="material-icons ml-auto text-base text-slate-500" aria-hidden="true">keyboard_arrow_down</span>
             </button>
             <select class="sr-only" id="language" name="language" tabindex="-1" aria-hidden="true">
               {% for language in languages %}
@@ -186,7 +177,6 @@
             <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="theme-menu">
               <span class="grid h-5 w-5 place-items-center rounded bg-slate-900 text-[9px] font-bold text-white" aria-hidden="true">fn</span>
               <span class="truncate" id="theme-value">{{ values.theme_name }}</span>
-              <span class="material-icons ml-auto text-base text-slate-500" aria-hidden="true">keyboard_arrow_down</span>
             </button>
             <select class="sr-only" id="theme_name" name="theme_name" tabindex="-1" aria-hidden="true">
               {% for theme in themes %}
@@ -206,7 +196,6 @@
             <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="sample-menu">
               <span class="grid h-5 w-5 place-items-center" data-select-icon aria-hidden="true"></span>
               <span class="truncate" id="sample-value">{{ default_sample }}</span>
-              <span class="material-icons ml-auto text-base text-slate-500" aria-hidden="true">keyboard_arrow_down</span>
             </button>
             <select id="sample_name" class="sr-only" tabindex="-1" aria-hidden="true">
               {% for name in samples %}
