@@ -26,6 +26,7 @@ FONTS = [
 ]
 
 ASPECT_RATIOS = [
+    {"value": "display", "label": "Display - 700x300", "width": 700, "height": 300},
     {"value": "16_9", "label": "16:9 - 1280x720", "width": 1280, "height": 720},
     {"value": "9_16", "label": "9:16 - 720x1280", "width": 720, "height": 1280},
     {"value": "1_1", "label": "1:1 - 1080x1080", "width": 1080, "height": 1080},
@@ -37,6 +38,11 @@ ASPECT_RATIO_DIMENSIONS = {
     for item in ASPECT_RATIOS
     if item["width"] is not None and item["height"] is not None
 }
+TYPING_MODES = [
+    {"value": "character", "label": "Character"},
+    {"value": "word", "label": "Word"},
+    {"value": "line", "label": "Line"},
+]
 
 DEFAULT_SAMPLE = "Python API"
 DEFAULT_ASPECT_RATIO = "16_9"
@@ -65,6 +71,7 @@ async def index(request: Request) -> HTMLResponse:
             "themes": list(THEMES.keys()),
             "fonts": FONTS,
             "aspect_ratios": ASPECT_RATIOS,
+            "typing_modes": TYPING_MODES,
             "samples": SAMPLES,
             "samples_json": json.dumps(SAMPLES),
             "default_sample": DEFAULT_SAMPLE,
@@ -146,6 +153,7 @@ def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
         "speed_ms": 24,
         "line_pause_ms": 160,
         "start_delay_ms": 350,
+        "typing_mode": "character",
         "show_line_numbers": True,
         "show_diff_gutter": False,
         "show_window_chrome": True,
@@ -178,6 +186,7 @@ async def _payload_from_request(request: Request) -> dict[str, Any]:
         "speed_ms": _int(form.get("speed_ms"), 24, 4, 120),
         "line_pause_ms": _int(form.get("line_pause_ms"), 160, 0, 800),
         "start_delay_ms": _int(form.get("start_delay_ms"), 350, 0, 2500),
+        "typing_mode": _typing_mode(form.get("typing_mode")),
         "show_line_numbers": _bool(form.get("show_line_numbers")),
         "show_diff_gutter": False,
         "show_window_chrome": _bool(form.get("show_window_chrome")),
@@ -202,12 +211,14 @@ def _options_from_payload(values: dict[str, Any]):
         speed_ms=values["speed_ms"],
         line_pause_ms=values["line_pause_ms"],
         start_delay_ms=values["start_delay_ms"],
+        typing_mode=values["typing_mode"],
         show_line_numbers=values["show_line_numbers"],
         show_diff_gutter=values["show_diff_gutter"],
         show_window_chrome=values["show_window_chrome"],
         autoplay=values["autoplay"],
         loop=values["loop"],
         cursor=values["cursor"],
+        flush_frame=values["aspect_ratio"] == "display",
     )
 
 
@@ -218,6 +229,13 @@ def _build_preview(values: dict[str, Any]) -> str:
 
 def _bool(value: Any) -> bool:
     return str(value).lower() in {"1", "true", "yes", "on"}
+
+
+def _typing_mode(value: Any) -> str:
+    mode = str(value or "character").strip().lower()
+    if mode in {item["value"] for item in TYPING_MODES}:
+        return mode
+    return "character"
 
 
 def _apply_aspect_ratio(aspect_ratio: str, width: int, height: int) -> tuple[int, int, str]:

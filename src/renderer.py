@@ -40,12 +40,14 @@ class RenderOptions:
     speed_ms: int = 24
     line_pause_ms: int = 160
     start_delay_ms: int = 350
+    typing_mode: str = "character"
     show_line_numbers: bool = True
     show_diff_gutter: bool = True
     show_window_chrome: bool = True
     autoplay: bool = True
     loop: bool = False
     cursor: str = "bar"
+    flush_frame: bool = False
 
 
 def make_render_options(**values: Any) -> RenderOptions:
@@ -67,6 +69,7 @@ def build_typing_html(code: str, options: RenderOptions, standalone: bool = Fals
             "speedMs": _clamp(options.speed_ms, 4, 250),
             "linePauseMs": _clamp(options.line_pause_ms, 0, 1200),
             "startDelayMs": _clamp(options.start_delay_ms, 0, 5000),
+            "typingMode": _typing_mode(options.typing_mode),
             "autoplay": options.autoplay,
             "loop": options.loop,
         }
@@ -106,6 +109,8 @@ def build_typing_html(code: str, options: RenderOptions, standalone: bool = Fals
         document = document.replace(token, value)
 
     if standalone:
+        if options.flush_frame:
+            document = document.replace("<body>", '<body class="flush-frame">')
         return document
 
     return (
@@ -175,6 +180,12 @@ def _cursor_class(cursor: str) -> str:
     if cursor in {"block", "underline"}:
         return cursor
     return "bar"
+
+
+def _typing_mode(mode: str) -> str:
+    if mode in {"word", "line"}:
+        return mode
+    return "character"
 
 
 def _file_icon_alt(title: str, language: str) -> str:
@@ -308,6 +319,26 @@ body.embedded .editor-window {
   box-shadow: none;
 }
 
+body.flush-frame {
+  width: var(--stage-width);
+  height: var(--stage-height);
+  min-height: var(--stage-height);
+  overflow: hidden;
+  background: transparent;
+}
+
+body.flush-frame .stage-shell {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+
+body.flush-frame .editor-window {
+  height: 100%;
+  border: 0;
+  box-shadow: none;
+}
+
 .window-chrome {
   display: __CHROME_DISPLAY__;
   align-items: center;
@@ -362,7 +393,7 @@ body.embedded .editor-window {
 
 .code-viewport {
   height: __VIEWPORT_HEIGHT__;
-  overflow-x: hidden;
+  overflow-x: auto;
   overflow-y: auto;
   background: var(--editor-bg);
   scrollbar-width: thin;
@@ -571,9 +602,50 @@ body.embedded .editor-window {
   root.querySelectorAll(".line-content").forEach(wrapTextNodes);
 
   const chars = Array.from(root.querySelectorAll(".line-content .typing-char"));
-  let index = 0;
+  const steps = buildTypingSteps(chars, options.typingMode);
+  let stepIndex = 0;
+  let visibleCount = 0;
   let timer = null;
   let playing = false;
+
+  function charLine(char) {
+    return char.closest(".code-line");
+  }
+
+  function buildTypingSteps(characters, mode) {
+    if (mode === "line") {
+      return Array.from(root.querySelectorAll(".code-line"))
+        .map((line) => Array.from(line.querySelectorAll(".line-content .typing-char")))
+        .filter((lineChars) => lineChars.length > 0);
+    }
+
+    if (mode === "word") {
+      const wordSteps = [];
+      let group = [];
+      let hasWordChar = false;
+
+      characters.forEach((char, charIndex) => {
+        const text = char.textContent || "";
+        const isSpace = /\s/.test(text);
+        const next = characters[charIndex + 1];
+        const nextIsSpace = next ? /\s/.test(next.textContent || "") : false;
+        const nextIsSameLine = next ? charLine(next) === charLine(char) : false;
+
+        group.push(char);
+        hasWordChar = hasWordChar || !isSpace;
+
+        if (!next || !nextIsSameLine || (hasWordChar && isSpace && !nextIsSpace)) {
+          wordSteps.push(group);
+          group = [];
+          hasWordChar = false;
+        }
+      });
+
+      return wordSteps;
+    }
+
+    return characters.map((char) => [char]);
+  }
 
   function setActiveLine(line) {
     root.querySelectorAll(".code-line.active").forEach((item) => item.classList.remove("active"));
@@ -601,30 +673,32 @@ body.embedded .editor-window {
       return;
     }
 
-    if (index <= 0) {
+    if (visibleCount <= 0) {
       chars[0].before(cursor);
-      activeLine = chars[0].closest(".code-line");
+      activeLine = charLine(chars[0]);
     } else {
-      const previous = chars[Math.min(index - 1, chars.length - 1)];
+      const previous = chars[Math.min(visibleCount - 1, chars.length - 1)];
       previous.after(cursor);
-      activeLine = previous.closest(".code-line");
+      activeLine = charLine(previous);
     }
     setActiveLine(activeLine);
     keepCursorInView(activeLine);
   }
 
   function updateProgress() {
-    const pct = chars.length === 0 ? 100 : Math.round((index / chars.length) * 100);
+    const pct = chars.length === 0 ? 100 : Math.round((visibleCount / chars.length) * 100);
     progressFill.style.width = `${pct}%`;
   }
 
   function nextDelay() {
-    const current = chars[index - 1];
-    const next = chars[index];
+    const currentStep = steps[stepIndex - 1];
+    const nextStep = steps[stepIndex];
+    const current = currentStep ? currentStep[currentStep.length - 1] : null;
+    const next = nextStep ? nextStep[0] : null;
     if (!current || !next) {
       return options.speedMs;
     }
-    return current.closest(".code-line") === next.closest(".code-line")
+    return charLine(current) === charLine(next)
       ? options.speedMs
       : options.speedMs + options.linePauseMs;
   }
@@ -634,7 +708,7 @@ body.embedded .editor-window {
       return;
     }
 
-    if (index >= chars.length) {
+    if (stepIndex >= steps.length) {
       updateProgress();
       if (options.loop) {
         timer = window.setTimeout(resetAndPlay, 900);
@@ -645,8 +719,10 @@ body.embedded .editor-window {
       return;
     }
 
-    chars[index].classList.add("visible");
-    index += 1;
+    const step = steps[stepIndex];
+    step.forEach((char) => char.classList.add("visible"));
+    visibleCount += step.length;
+    stepIndex += 1;
     placeCursor();
     updateProgress();
     timer = window.setTimeout(tick, nextDelay());
@@ -658,7 +734,7 @@ body.embedded .editor-window {
     }
     playing = true;
     playPause.textContent = "Pause";
-    timer = window.setTimeout(tick, index === 0 ? options.startDelayMs : options.speedMs);
+    timer = window.setTimeout(tick, stepIndex === 0 ? options.startDelayMs : options.speedMs);
   }
 
   function pause() {
@@ -669,7 +745,8 @@ body.embedded .editor-window {
 
   function reset() {
     pause();
-    index = 0;
+    stepIndex = 0;
+    visibleCount = 0;
     chars.forEach((char) => char.classList.remove("visible"));
     root.querySelectorAll(".code-line.line-started").forEach((line) => line.classList.remove("line-started"));
     placeCursor();

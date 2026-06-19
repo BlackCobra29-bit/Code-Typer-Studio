@@ -19,7 +19,7 @@ PREVIEW_DISPLAY_WIDTH = 700
 def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> bytes:
     theme = THEMES.get(options.theme_name, THEMES["VS Code Dark+"])
     width = max(520, min(1600, int(options.width)))
-    height = max(320, min(1400, int(options.height)))
+    height = max(260, min(1400, int(options.height)))
     font_size = _gif_font_size(options.font_size, width)
     line_height = int(font_size * max(1.1, min(2.2, float(options.line_height))))
     chrome_height = 42 if options.show_window_chrome else 0
@@ -32,9 +32,7 @@ def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> 
     chars = _token_chars(code or " ", options.language, options.theme_name)
     total = len(chars)
     step = max(1, min(12, int(frame_step)))
-    counts = list(range(0, total + 1, step))
-    if not counts or counts[-1] != total:
-        counts.append(total)
+    counts = _visible_counts(chars, options.typing_mode, step)
 
     max_visible_lines = max(1, (height - chrome_height - padding_bottom) // line_height)
     frames = []
@@ -67,7 +65,7 @@ def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> 
         frames.extend([frames[-1].copy() for _ in range(6)])
 
     output = BytesIO()
-    duration = max(20, min(250, int(options.speed_ms) * step))
+    duration = _frame_duration(options, step)
     frames[0].save(
         output,
         format="GIF",
@@ -176,6 +174,59 @@ def _token_chars(code: str, language: str, theme_name: str) -> list[dict]:
                 line += 1
 
     return chars
+
+
+def _visible_counts(chars: list[dict], typing_mode: str, frame_step: int) -> list[int]:
+    total = len(chars)
+    if typing_mode == "line":
+        counts = [0]
+        for index, char in enumerate(chars, start=1):
+            next_char = chars[index] if index < total else None
+            if next_char is None or next_char["line"] != char["line"]:
+                counts.append(index)
+        return _unique_counts(counts, total)
+
+    if typing_mode == "word":
+        counts = [0]
+        has_word_char = False
+        for index, char in enumerate(chars, start=1):
+            text = char["text"]
+            next_char = chars[index] if index < total else None
+            is_space = text.isspace()
+            next_is_space = bool(next_char and next_char["text"].isspace())
+            next_is_same_line = bool(next_char and next_char["line"] == char["line"])
+
+            has_word_char = has_word_char or not is_space
+            if next_char is None or not next_is_same_line or (has_word_char and is_space and not next_is_space):
+                counts.append(index)
+                has_word_char = False
+        return _unique_counts(counts, total)
+
+    counts = list(range(0, total + 1, frame_step))
+    if not counts or counts[-1] != total:
+        counts.append(total)
+    return counts
+
+
+def _unique_counts(counts: list[int], total: int) -> list[int]:
+    clean_counts = []
+    seen = set()
+    for count in counts:
+        bounded = max(0, min(total, count))
+        if bounded not in seen:
+            seen.add(bounded)
+            clean_counts.append(bounded)
+    if not clean_counts or clean_counts[-1] != total:
+        clean_counts.append(total)
+    return clean_counts
+
+
+def _frame_duration(options: RenderOptions, frame_step: int) -> int:
+    if options.typing_mode == "line":
+        return max(20, min(1000, int(options.speed_ms) + int(options.line_pause_ms)))
+    if options.typing_mode == "word":
+        return max(20, min(600, int(options.speed_ms) * 4))
+    return max(20, min(250, int(options.speed_ms) * frame_step))
 
 
 def _active_line(chars: list[dict], visible_count: int) -> int:

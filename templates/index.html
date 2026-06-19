@@ -241,6 +241,15 @@
             </label>
 
             <label class="block">
+              <span class="mb-1 block text-xs font-bold text-[#333]">Typing Mode</span>
+              <select class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="typing_mode" name="typing_mode">
+                {% for mode in typing_modes %}
+                  <option value="{{ mode.value }}" {% if values.typing_mode == mode.value %}selected{% endif %}>{{ mode.label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+
+            <label class="block">
               <span class="mb-1 block text-xs font-bold text-[#333]">Line Pause</span>
               <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="line_pause_ms" name="line_pause_ms" type="number" min="0" max="800" step="10" value="{{ values.line_pause_ms }}">
             </label>
