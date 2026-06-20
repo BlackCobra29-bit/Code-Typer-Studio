@@ -68,12 +68,12 @@
         <a class="inline-flex items-center gap-2 transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="/">
           Home
         </a>
-        <a class="inline-flex items-center gap-2 transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="#about">
+        <button class="inline-flex items-center gap-2 transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-900/15" type="button" data-modal-open="about-modal">
           About Us
-        </a>
-        <a class="inline-flex items-center gap-2 transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="#contact">
+        </button>
+        <button class="inline-flex items-center gap-2 transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-900/15" type="button" data-modal-open="contact-modal">
           Contact Us
-        </a>
+        </button>
       </nav>
 
       <a class="ml-auto hidden items-center text-slate-700 transition hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-900/15 sm:inline-flex" href="https://github.com/BlackCobra29-bit/Code-Typer-Studio" target="_blank" rel="noopener noreferrer" aria-label="Code Typer Studio GitHub repository">
@@ -90,12 +90,12 @@
           <a class="inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="/">
             Home
           </a>
-          <a class="inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="#about">
+          <button class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" type="button" data-modal-open="about-modal">
             About Us
-          </a>
-          <a class="inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="#contact">
+          </button>
+          <button class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" type="button" data-modal-open="contact-modal">
             Contact Us
-          </a>
+          </button>
           <a class="inline-flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-900/15" href="https://github.com/BlackCobra29-bit/Code-Typer-Studio" target="_blank" rel="noopener noreferrer" aria-label="Code Typer Studio GitHub repository">
             <svg class="h-5 w-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2.02c-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.25 3.33.95.1-.74.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.69 0-1.26.45-2.29 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.16 1.18.92-.26 1.9-.38 2.88-.39.98.01 1.96.13 2.88.39 2.2-1.49 3.16-1.18 3.16-1.18.62 1.59.23 2.76.11 3.05.73.8 1.18 1.83 1.18 3.09 0 4.42-2.69 5.39-5.25 5.68.41.35.78 1.05.78 2.12v3.06c0 .31.21.68.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/>
@@ -125,7 +125,7 @@
           <a class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-full bg-slate-950 px-5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20 sm:h-11 sm:px-8 sm:text-base" href="#preview">
             Get started
           </a>
-          <a class="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-slate-300 bg-white/55 px-4 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-white/80 focus:outline-none focus:ring-4 focus:ring-slate-900/10 sm:h-11 sm:gap-3 sm:px-7 sm:text-base" href="#preview">
+          <a class="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-slate-300 bg-white/55 px-4 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-white/80 focus:outline-none focus:ring-4 focus:ring-slate-900/10 sm:h-11 sm:gap-3 sm:px-7 sm:text-base" href="https://www.youtube.com/@ByteWithoutBite">
             Watch video
           </a>
         </div>
@@ -141,7 +141,7 @@
           <strong class="sr-only" id="preview-status">Ready</strong>
           <nav class="mt-6 flex flex-wrap justify-center gap-4" aria-label="Primary actions">
             <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/25" type="button" onclick="htmx.trigger(document.getElementById('preview-trigger'), 'refreshPreview')">
-              Simulate
+              Restart
             </button>
             <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/25" type="submit" formaction="/download/html" formmethod="post">
               Export HTML
@@ -317,6 +317,80 @@
       </p>
     </footer>
 
+    <div class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto p-4 sm:p-6" id="about-modal" data-modal aria-hidden="true">
+      <div class="absolute inset-0 bg-slate-950/65 opacity-0 backdrop-blur-sm transition-opacity duration-200" data-modal-backdrop></div>
+      <section class="relative w-full max-w-xl scale-95 overflow-hidden rounded-3xl bg-white opacity-0 shadow-2xl shadow-slate-950/30 ring-1 ring-white/20 transition duration-200" role="dialog" aria-modal="true" aria-labelledby="about-modal-title" aria-describedby="about-modal-description" tabindex="-1" data-modal-panel>
+        <div class="px-6 py-7 sm:px-8 sm:py-8">
+          <h2 class="sr-only" id="about-modal-title">About Code Typer Studio</h2>
+          <button class="absolute right-5 top-5 grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/40" type="button" aria-label="Close About Us modal" data-modal-close>
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M6 6l12 12M18 6 6 18" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <p class="pr-12 text-base leading-7 text-slate-600" id="about-modal-description">
+            It was built for people who explain, teach, and share code. Customize the language, theme, speed, cursor, dimensions, and more, then export an animation ready for your next project.
+          </p>
+          <div class="mt-6 grid gap-3 sm:grid-cols-3">
+            <article class="rounded-2xl bg-blue-50 p-4 ring-1 ring-blue-100">
+              <span class="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-white">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m15 10 4.5-2.5v9L15 14M4.5 6.5h9a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 3 16V8a1.5 1.5 0 0 1 1.5-1.5Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <h3 class="mt-3 font-bold text-slate-950">Content creators</h3>
+              <p class="mt-1 text-sm leading-6 text-slate-600">Create engaging code visuals for videos, reels, and tutorials.</p>
+            </article>
+            <article class="rounded-2xl bg-violet-50 p-4 ring-1 ring-violet-100">
+              <span class="grid h-9 w-9 place-items-center rounded-xl bg-violet-600 text-white">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 10 9-5 9 5-9 5-9-5Zm4 2.3V17l5 2.5 5-2.5v-4.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <h3 class="mt-3 font-bold text-slate-950">Educators</h3>
+              <p class="mt-1 text-sm leading-6 text-slate-600">Make lessons easier to follow with step-by-step code playback.</p>
+            </article>
+            <article class="rounded-2xl bg-cyan-50 p-4 ring-1 ring-cyan-100">
+              <span class="grid h-9 w-9 place-items-center rounded-xl bg-cyan-600 text-white">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 8 4 12l4 4M16 8l4 4-4 4M14 5l-4 14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <h3 class="mt-3 font-bold text-slate-950">Developers</h3>
+              <p class="mt-1 text-sm leading-6 text-slate-600">Present snippets cleanly in demos, portfolios, and documentation.</p>
+            </article>
+          </div>
+          <div class="mt-7 flex justify-end">
+            <button class="rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20" type="button" data-modal-close>Got it</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto p-4 sm:p-6" id="contact-modal" data-modal aria-hidden="true">
+      <div class="absolute inset-0 bg-slate-950/65 opacity-0 backdrop-blur-sm transition-opacity duration-200" data-modal-backdrop></div>
+      <section class="relative w-full max-w-xl scale-95 overflow-hidden rounded-3xl bg-white opacity-0 shadow-2xl shadow-slate-950/30 ring-1 ring-white/20 transition duration-200" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title" aria-describedby="contact-modal-description" tabindex="-1" data-modal-panel>
+        <button class="absolute right-5 top-5 z-10 grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/40" type="button" aria-label="Close Contact Us modal" data-modal-close>
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke-linecap="round"/></svg>
+        </button>
+        <div class="px-6 pb-7 pt-8 sm:px-8 sm:pb-8">
+          <span class="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-600/25">
+            <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6.5h16v11H4v-11Z" stroke-linejoin="round"/><path d="m5 7.5 7 5 7-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <p class="mt-5 text-sm font-bold uppercase tracking-[0.2em] text-blue-600">We’re listening</p>
+          <h2 class="mt-2 text-3xl font-black tracking-tight text-slate-950" id="contact-modal-title">Contact us</h2>
+          <p class="mt-3 text-base leading-7 text-slate-600" id="contact-modal-description">
+            Found a problem or bug in the system? Have a suggestion that could make Code Typer Studio better? Send us an email and include as much detail as possible.
+          </p>
+          <div class="mt-6 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200 sm:flex sm:items-center sm:justify-between sm:gap-4">
+            <div class="min-w-0">
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Email support</p>
+              <p class="mt-1 truncate font-bold text-slate-950">eminemmerne@gmail.com</p>
+            </div>
+            <a class="mt-4 inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/25 sm:mt-0" href="mailto:eminemmerne@gmail.com?subject=Code%20Typer%20Studio%20Feedback">
+              Send email
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+          <p class="mt-4 text-sm leading-6 text-slate-500">For bug reports, please mention what you were doing, what you expected, and what happened instead.</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- Temporarily hidden; keep this markup for when Buy Me a Coffee is re-enabled.
     <a
       class="fixed bottom-5 right-5 z-30 inline-flex h-14 w-14 items-center justify-center rounded-full bg-transparent transition hover:-translate-y-0.5 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-400/35 sm:bottom-6 sm:right-6"
       href="https://www.buymeacoffee.com/eminemmernd"
@@ -335,6 +409,7 @@
       </svg>
       <span class="sr-only">Buy me a coffee</span>
     </a>
+    -->
   </form>
 
   <script id="language-catalog" type="application/json">{{ language_catalog | tojson }}</script>
@@ -373,6 +448,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/julia/julia.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/dockerfile/dockerfile.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/cmake/cmake.min.js"></script>
-  <script src="{{ url_for('static', path='app.js') }}?v=13"></script>
+  <script src="{{ url_for('static', path='app.js') }}?v=14"></script>
 </body>
 </html>
