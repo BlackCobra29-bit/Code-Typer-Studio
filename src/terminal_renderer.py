@@ -74,7 +74,7 @@ class TerminalOptions:
     output: str = DEFAULT_TERMINAL_OUTPUT
     word_speed_ms: int = 320
     output_delay_ms: int = 1000
-    loop: bool = False
+    loop: bool = True
 
 
 def build_terminal_html(options: TerminalOptions, standalone: bool = False) -> str:

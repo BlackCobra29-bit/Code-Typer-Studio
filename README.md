@@ -178,11 +178,15 @@ Terminal output can be plain text or contain ANSI foreground sequences. Plain te
 |   `-- themes.py                  # Editor theme definitions
 |-- static/
 |   |-- app.js                     # Code Studio interactions
+|   |-- shared.js                  # Shared modal interactions
 |   |-- terminal.js                # Terminal Studio interactions
 |   `-- icons/                     # Language and file icons
 `-- templates/
     |-- index.html                 # Code Studio page
     |-- terminal.html              # Terminal Studio page
+    |-- _navigation.html           # Shared responsive navigation
+    |-- _buy_me_coffee.html        # Shared support button
+    |-- _shared_modals.html        # Terminal-page About and Contact modals
     |-- _preview.html              # Code preview iframe
     `-- _terminal_preview.html     # Terminal preview iframe
 ```

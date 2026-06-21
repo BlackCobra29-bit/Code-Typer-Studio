@@ -10,18 +10,7 @@
   <form id="terminal-form" class="min-h-screen" method="post">
     <button id="terminal-preview-trigger" class="hidden" type="button" hx-post="/terminal/preview" hx-include="#terminal-form" hx-target="#terminal-preview" hx-swap="innerHTML" hx-trigger="refreshPreview"></button>
 
-    <header class="border-b border-slate-200/80 bg-white">
-      <div class="mx-auto flex h-16 w-full max-w-[1180px] items-center px-4 sm:px-6">
-        <a class="flex items-center gap-3 font-bold text-slate-900" href="/" aria-label="Code Typer Studio home">
-          <span class="grid h-9 w-9 place-items-center rounded-lg bg-slate-900 text-xs text-white">CTS</span>
-          <span class="hidden sm:inline">Code Typer Studio</span>
-        </a>
-        <nav class="ml-auto flex items-center gap-2 text-sm font-semibold" aria-label="Main navigation">
-          <a class="rounded-lg px-3 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950" href="/">Code Studio</a>
-          <a class="rounded-lg bg-slate-900 px-3 py-2 text-white" href="/terminal" aria-current="page">Terminal</a>
-        </nav>
-      </div>
-    </header>
+    {% include "_navigation.html" %}
 
     <main class="mx-auto w-full max-w-[1180px] px-4 py-12 sm:px-6 sm:py-16">
       <section class="text-center" aria-labelledby="terminal-title">
@@ -81,8 +70,11 @@
     </main>
 
     <footer class="border-t border-slate-200 bg-white py-6 text-center text-sm text-slate-500">&copy; {{ current_year }} Code Typer Studio</footer>
+    {% include "_shared_modals.html" %}
+    {% include "_buy_me_coffee.html" %}
   </form>
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script src="{{ url_for('static', path='shared.js') }}?v=1"></script>
   <script src="{{ url_for('static', path='terminal.js') }}?v=1"></script>
 </body>
 </html>

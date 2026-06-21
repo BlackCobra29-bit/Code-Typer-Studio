@@ -225,7 +225,7 @@ def _default_terminal_payload() -> dict[str, Any]:
         "output": DEFAULT_TERMINAL_OUTPUT,
         "word_speed_ms": 320,
         "output_delay_ms": 1000,
-        "loop": False,
+        "loop": True,
     }
 
 
