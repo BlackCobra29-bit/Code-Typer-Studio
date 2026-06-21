@@ -218,7 +218,7 @@ def _default_terminal_payload() -> dict[str, Any]:
         "command": "python --version",
         "output": "Python 3.12.4",
         "word_speed_ms": 320,
-        "output_delay_ms": 2000,
+        "output_delay_ms": 1000,
         "loop": False,
     }
 
@@ -231,7 +231,7 @@ async def _terminal_payload_from_request(request: Request) -> dict[str, Any]:
         "command": str(form.get("command", ""))[:1000],
         "output": str(form.get("output", ""))[:6000],
         "word_speed_ms": _int(form.get("word_speed_ms"), 320, 80, 1200),
-        "output_delay_ms": 2000,
+        "output_delay_ms": 1000,
         "loop": _bool(form.get("loop")),
     }
 

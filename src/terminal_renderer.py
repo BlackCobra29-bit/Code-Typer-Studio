@@ -13,6 +13,47 @@ from PIL import Image, ImageDraw, ImageFont
 
 TERMINAL_WIDTH = 700
 TERMINAL_HEIGHT = 300
+OUTPUT_BASE_COLOR = "#d7d7d7"
+ANSI_COLORS = {
+    30: "#5c6370",
+    31: "#ff6b6b",
+    32: "#69db7c",
+    33: "#ffd166",
+    34: "#74c0fc",
+    35: "#c792ea",
+    36: "#66d9ef",
+    37: OUTPUT_BASE_COLOR,
+    90: "#8b949e",
+    91: "#ff8787",
+    92: "#8ce99a",
+    93: "#ffe066",
+    94: "#91caff",
+    95: "#d0a9f5",
+    96: "#8be9fd",
+    97: "#ffffff",
+}
+ANSI_PATTERN = re.compile(r"\x1b\[([0-9;]*)m")
+SEMANTIC_PATTERN = re.compile(
+    r"(?P<error>\b(?:error(?:\[[A-Z0-9]+\])?|fatal|failed|failure|panic(?:ked)?)\b:?)"
+    r"|(?P<warning>\b(?:warn(?:ing)?|deprecated)\b:?)"
+    r"|(?P<success>\b(?:success(?:ful(?:ly)?)?|finished|compiled?|compiling|created|installed|done|passed|ok)\b)"
+    r"|(?P<path>(?:\.{0,2}/)?(?:[\w.-]+/)+[\w.-]+(?::\d+(?::\d+)?)?)"
+    r"|(?P<string>`[^`]*`|'[^']*'|\"[^\"]*\")"
+    r"|(?P<marker>-->|==>|\^+|~{3,}|-{3,})"
+    r"|(?P<diagnostic>\b(?:mutable|immutable|borrow(?:ed)?|expected|found|required)\b)"
+    r"|(?P<number>\b\d+(?=\s*\|)|\b\d+(?:\.\d+){1,3}\b)",
+    re.IGNORECASE,
+)
+SEMANTIC_COLORS = {
+    "error": "#ff6b6b",
+    "warning": "#ffd166",
+    "success": "#69db7c",
+    "path": "#66d9ef",
+    "string": "#69db7c",
+    "marker": "#ffd166",
+    "diagnostic": "#c792ea",
+    "number": "#f6a66a",
+}
 
 
 @dataclass(frozen=True)
@@ -22,7 +63,7 @@ class TerminalOptions:
     command: str = "python --version"
     output: str = "Python 3.12.4"
     word_speed_ms: int = 320
-    output_delay_ms: int = 2000
+    output_delay_ms: int = 1000
     loop: bool = False
 
 
@@ -31,7 +72,7 @@ def build_terminal_html(options: TerminalOptions, standalone: bool = False) -> s
         json.dumps(
             {
                 "command": options.command,
-                "output": options.output,
+                "outputTokens": terminal_output_tokens(options.output),
                 "wordSpeedMs": _clamp(options.word_speed_ms, 80, 1200),
                 "outputDelayMs": _clamp(options.output_delay_ms, 0, 5000),
                 "loop": options.loop,
@@ -88,6 +129,73 @@ def build_terminal_gif(options: TerminalOptions) -> bytes:
     return output.getvalue()
 
 
+def terminal_output_tokens(output: str) -> list[dict[str, str | bool]]:
+    text = output or ""
+    if ANSI_PATTERN.search(text):
+        return _ansi_output_tokens(text)
+
+    tokens: list[dict[str, str | bool]] = []
+    for line_index, line in enumerate(text.split("\n")):
+        position = 0
+        for match in SEMANTIC_PATTERN.finditer(line):
+            if match.start() > position:
+                _append_output_token(tokens, line[position : match.start()], OUTPUT_BASE_COLOR)
+            kind = match.lastgroup or ""
+            _append_output_token(
+                tokens,
+                match.group(0),
+                SEMANTIC_COLORS.get(kind, OUTPUT_BASE_COLOR),
+                bold=kind in {"error", "warning", "success"},
+            )
+            position = match.end()
+        if position < len(line):
+            _append_output_token(tokens, line[position:], OUTPUT_BASE_COLOR)
+        if line_index < len(text.split("\n")) - 1:
+            _append_output_token(tokens, "\n", OUTPUT_BASE_COLOR)
+    return tokens
+
+
+def _ansi_output_tokens(text: str) -> list[dict[str, str | bool]]:
+    tokens: list[dict[str, str | bool]] = []
+    color = OUTPUT_BASE_COLOR
+    bold = False
+    position = 0
+    for match in ANSI_PATTERN.finditer(text):
+        if match.start() > position:
+            _append_output_token(tokens, text[position : match.start()], color, bold)
+        codes = [int(code) for code in match.group(1).split(";") if code] or [0]
+        for code in codes:
+            if code == 0:
+                color = OUTPUT_BASE_COLOR
+                bold = False
+            elif code == 1:
+                bold = True
+            elif code == 22:
+                bold = False
+            elif code in {39, 49}:
+                color = OUTPUT_BASE_COLOR
+            elif code in ANSI_COLORS:
+                color = ANSI_COLORS[code]
+        position = match.end()
+    if position < len(text):
+        _append_output_token(tokens, text[position:], color, bold)
+    return tokens
+
+
+def _append_output_token(
+    tokens: list[dict[str, str | bool]],
+    text: str,
+    color: str,
+    bold: bool = False,
+) -> None:
+    if not text:
+        return
+    if tokens and tokens[-1]["color"] == color and tokens[-1]["bold"] == bold:
+        tokens[-1]["text"] = str(tokens[-1]["text"]) + text
+        return
+    tokens.append({"text": text, "color": color, "bold": bold})
+
+
 def _draw_terminal_frame(
     options: TerminalOptions,
     visible_command: str,
@@ -125,9 +233,16 @@ def _draw_terminal_frame(
 
     if show_output:
         output_y = y + 28
-        for line in (options.output or "").splitlines() or [""]:
-            draw.text((x, output_y), line, font=font, fill="#d7d7d7")
-            output_y += 24
+        output_x = x
+        for token in terminal_output_tokens(options.output):
+            parts = str(token["text"]).split("\n")
+            for part_index, part in enumerate(parts):
+                if part:
+                    draw.text((output_x, output_y), part, font=font, fill=str(token["color"]))
+                    output_x += draw.textlength(part, font=font)
+                if part_index < len(parts) - 1:
+                    output_x = x
+                    output_y += 24
     return image
 
 
@@ -214,6 +329,7 @@ body.embedded .terminal { width: 100%; height: 100%; box-shadow: none; }
 .prompt { color: #75c7ff; font-weight: 600; }
 .command { color: #f5f5f5; }
 .output { margin: 2px 0 0; color: #d7d7d7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.output-token { color: var(--token-color); }
 .cursor {
   display: inline-block;
   width: 0.58em;
@@ -270,7 +386,16 @@ body.embedded .terminal { width: 100%; height: 100%; box-shadow: none; }
   }
 
   function showOutput() {
-    output.textContent = config.output;
+    const fragment = document.createDocumentFragment();
+    config.outputTokens.forEach((token) => {
+      const span = document.createElement("span");
+      span.className = "output-token";
+      span.style.setProperty("--token-color", token.color);
+      span.style.fontWeight = token.bold ? "700" : "400";
+      span.textContent = token.text;
+      fragment.appendChild(span);
+    });
+    output.replaceChildren(fragment);
     screen.scrollTop = screen.scrollHeight;
     if (config.loop) schedule(restart, 2200);
   }
