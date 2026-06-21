@@ -20,6 +20,8 @@ cd Code-Typer-Studio
 - Export as standalone HTML
 - Export project settings as JSON
 - Export animated GIF
+- macOS-style terminal simulator with word-by-word commands and instant output
+- Fixed 700x300 terminal GIF export
 - Responsive FastAPI, Jinja2, HTMX, and Tailwind CSS interface
 
 ## Tech Stack

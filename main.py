@@ -14,6 +14,7 @@ from src.gif_exporter import build_typing_gif
 from src.languages import LANGUAGE_CATALOG, LANGUAGE_EXTENSIONS, LANGUAGES
 from src.renderer import build_typing_html, export_project_json, make_render_options
 from src.samples import SAMPLES
+from src.terminal_renderer import TerminalOptions, build_terminal_gif, build_terminal_html
 from src.themes import THEMES
 
 
@@ -79,6 +80,52 @@ async def index(request: Request) -> HTMLResponse:
             "preview_html": preview_html,
             "current_year": date.today().year,
         },
+    )
+
+
+@app.get("/terminal", response_class=HTMLResponse)
+async def terminal(request: Request) -> HTMLResponse:
+    values = _default_terminal_payload()
+    return templates.TemplateResponse(
+        request,
+        "terminal.html",
+        {
+            "values": values,
+            "preview_html": build_terminal_html(_terminal_options(values)),
+            "current_year": date.today().year,
+        },
+    )
+
+
+@app.post("/terminal/preview", response_class=HTMLResponse)
+async def terminal_preview(request: Request) -> HTMLResponse:
+    values = await _terminal_payload_from_request(request)
+    return templates.TemplateResponse(
+        request,
+        "_terminal_preview.html",
+        {"preview_html": build_terminal_html(_terminal_options(values))},
+    )
+
+
+@app.post("/terminal/download/html")
+async def download_terminal_html(request: Request) -> Response:
+    values = await _terminal_payload_from_request(request)
+    document = build_terminal_html(_terminal_options(values), standalone=True)
+    return Response(
+        document,
+        media_type="text/html",
+        headers={"Content-Disposition": 'attachment; filename="terminal-animation.html"'},
+    )
+
+
+@app.post("/terminal/download/gif")
+async def download_terminal_gif(request: Request) -> Response:
+    values = await _terminal_payload_from_request(request)
+    gif_bytes = build_terminal_gif(_terminal_options(values))
+    return Response(
+        gif_bytes,
+        media_type="image/gif",
+        headers={"Content-Disposition": 'attachment; filename="terminal-animation-700x300.gif"'},
     )
 
 
@@ -162,6 +209,35 @@ def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
         "cursor": "bar",
         "gif_step": GIF_FRAME_STEP,
     }
+
+
+def _default_terminal_payload() -> dict[str, Any]:
+    return {
+        "title": "eminem — zsh",
+        "prompt": "eminem@macbook ~ %",
+        "command": "python --version",
+        "output": "Python 3.12.4",
+        "word_speed_ms": 320,
+        "output_delay_ms": 2000,
+        "loop": False,
+    }
+
+
+async def _terminal_payload_from_request(request: Request) -> dict[str, Any]:
+    form = await request.form()
+    return {
+        "title": str(form.get("title", "Terminal"))[:80],
+        "prompt": str(form.get("prompt", "%"))[:120],
+        "command": str(form.get("command", ""))[:1000],
+        "output": str(form.get("output", ""))[:6000],
+        "word_speed_ms": _int(form.get("word_speed_ms"), 320, 80, 1200),
+        "output_delay_ms": 2000,
+        "loop": _bool(form.get("loop")),
+    }
+
+
+def _terminal_options(values: dict[str, Any]) -> TerminalOptions:
+    return TerminalOptions(**values)
 
 
 async def _payload_from_request(request: Request) -> dict[str, Any]:

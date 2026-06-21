@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terminal Simulator — Code Typer Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-50 font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',sans-serif] text-slate-900 antialiased">
+  <form id="terminal-form" class="min-h-screen" method="post">
+    <button id="terminal-preview-trigger" class="hidden" type="button" hx-post="/terminal/preview" hx-include="#terminal-form" hx-target="#terminal-preview" hx-swap="innerHTML" hx-trigger="refreshPreview"></button>
+
+    <header class="border-b border-slate-200/80 bg-white">
+      <div class="mx-auto flex h-16 w-full max-w-[1180px] items-center px-4 sm:px-6">
+        <a class="flex items-center gap-3 font-bold text-slate-900" href="/" aria-label="Code Typer Studio home">
+          <span class="grid h-9 w-9 place-items-center rounded-lg bg-slate-900 text-xs text-white">CTS</span>
+          <span class="hidden sm:inline">Code Typer Studio</span>
+        </a>
+        <nav class="ml-auto flex items-center gap-2 text-sm font-semibold" aria-label="Main navigation">
+          <a class="rounded-lg px-3 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950" href="/">Code Studio</a>
+          <a class="rounded-lg bg-slate-900 px-3 py-2 text-white" href="/terminal" aria-current="page">Terminal</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="mx-auto w-full max-w-[1180px] px-4 py-12 sm:px-6 sm:py-16">
+      <section class="text-center" aria-labelledby="terminal-title">
+        <p class="text-sm font-bold uppercase tracking-[0.22em] text-blue-600">Terminal Studio</p>
+        <h1 id="terminal-title" class="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Create a macOS terminal animation</h1>
+        <p class="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">Your command appears word by word, pauses for exactly two seconds, then shows the complete output at once.</p>
+      </section>
+
+      <section class="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,700px)_1fr]" aria-label="Terminal animation studio">
+        <div class="min-w-0">
+          <div id="terminal-preview" class="mx-auto h-[300px] w-full max-w-[700px] overflow-hidden rounded-[13px] bg-[#151515] shadow-2xl shadow-slate-900/20 ring-1 ring-slate-950/20">
+            {% include "_terminal_preview.html" %}
+          </div>
+          <div class="mt-5 flex flex-wrap items-center justify-center gap-3">
+            <button id="restart-terminal" class="h-10 rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400" type="button">Restart</button>
+            <button class="h-10 rounded-xl bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700" type="submit" formaction="/terminal/download/gif" formmethod="post">Export GIF · 700×300</button>
+            <button class="h-10 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800" type="submit" formaction="/terminal/download/html" formmethod="post">Export HTML</button>
+          </div>
+        </div>
+
+        <aside class="rounded-2xl bg-white p-5 shadow-xl shadow-slate-200/70 ring-1 ring-slate-200 sm:p-6" aria-label="Terminal settings">
+          <h2 class="text-lg font-black">Terminal content</h2>
+          <p class="mt-1 text-sm leading-6 text-slate-500">Edit any field to refresh the preview.</p>
+          <div class="mt-5 grid gap-4">
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Window title</span>
+              <input class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" name="title" value="{{ values.title }}" maxlength="80">
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Prompt</span>
+              <input class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 font-mono text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" name="prompt" value="{{ values.prompt }}" maxlength="120">
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Command</span>
+              <textarea class="min-h-24 w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 font-mono text-sm leading-6 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" name="command" maxlength="1000">{{ values.command }}</textarea>
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Output</span>
+              <textarea class="min-h-32 w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 font-mono text-sm leading-6 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" name="output" maxlength="6000">{{ values.output }}</textarea>
+            </label>
+            <label class="block">
+              <span class="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500"><span>Word speed</span><output id="speed-value">{{ values.word_speed_ms }} ms</output></span>
+              <input class="w-full accent-blue-600" id="word-speed" name="word_speed_ms" type="range" min="80" max="1200" step="20" value="{{ values.word_speed_ms }}">
+            </label>
+            <div class="flex items-center justify-between rounded-xl bg-blue-50 px-3 py-2.5 text-sm">
+              <span class="font-semibold text-blue-950">Output delay</span>
+              <span class="rounded-full bg-white px-2.5 py-1 font-bold text-blue-700 shadow-sm">2 seconds</span>
+              <input type="hidden" name="output_delay_ms" value="2000">
+            </div>
+            <label class="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700">
+              <input class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" name="loop" type="checkbox" {% if values.loop %}checked{% endif %}>
+              Loop animation
+            </label>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="border-t border-slate-200 bg-white py-6 text-center text-sm text-slate-500">&copy; {{ current_year }} Code Typer Studio</footer>
+  </form>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script src="{{ url_for('static', path='terminal.js') }}?v=1"></script>
+</body>
+</html>
