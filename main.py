@@ -66,12 +66,21 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        {"current_year": date.today().year},
+    )
+
+
+@app.get("/code-typer", response_class=HTMLResponse)
+async def code_typer(request: Request) -> HTMLResponse:
     sample = SAMPLES[DEFAULT_SAMPLE]
     initial = _default_payload(sample)
     preview_html = _build_preview(initial)
     return templates.TemplateResponse(
         request,
-        "index.html",
+        "code_typer.html",
         {
             "languages": LANGUAGES,
             "language_catalog": LANGUAGE_CATALOG,

@@ -125,12 +125,13 @@ uvicorn main:app --reload
 
 Open these pages:
 
-- Code Studio: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+- Home: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+- Code Studio: [http://127.0.0.1:8000/code-typer](http://127.0.0.1:8000/code-typer)
 - Terminal Studio: [http://127.0.0.1:8000/terminal](http://127.0.0.1:8000/terminal)
 
 ## Using Code Studio
 
-1. Select a sample or paste source code into the editor.
+1. Open `/code-typer`, select a sample, or paste source code into the editor.
 2. Choose the language, theme, filename, typing mode, speed, and frame size.
 3. Review the live preview and use **Restart** to replay it.
 4. Export the result as HTML, GIF, or project JSON.
@@ -149,7 +150,8 @@ Terminal output can be plain text or contain ANSI foreground sequences. Plain te
 
 | Method | Route | Description |
 | --- | --- | --- |
-| `GET` | `/` | Code Studio page |
+| `GET` | `/` | Landing page for both studios |
+| `GET` | `/code-typer` | Code Studio page |
 | `POST` | `/preview` | Refresh the code animation preview |
 | `POST` | `/download/html` | Export a standalone code animation |
 | `POST` | `/download/gif` | Export an animated code GIF |
@@ -182,7 +184,8 @@ Terminal output can be plain text or contain ANSI foreground sequences. Plain te
 |   |-- terminal.js                # Terminal Studio interactions
 |   `-- icons/                     # Language and file icons
 `-- templates/
-    |-- index.html                 # Code Studio page
+    |-- index.html                 # Landing page
+    |-- code_typer.html            # Code Studio page
     |-- terminal.html              # Terminal Studio page
     |-- _navigation.html           # Shared responsive navigation
     |-- _buy_me_coffee.html        # Shared support button

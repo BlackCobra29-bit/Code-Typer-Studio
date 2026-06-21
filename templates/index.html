@@ -5,386 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Code Typer Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-  <style>
-    .CodeMirror {
-      height: 14rem;
-      border-radius: 0.375rem;
-      background: #f8fafc;
-      color: #0f172a;
-      font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
-      font-size: 0.875rem;
-      line-height: 1.5rem;
-    }
-
-    .CodeMirror-focused {
-      outline: 2px solid rgb(14 165 233 / 0.3);
-      outline-offset: 0;
-    }
-
-    .CodeMirror-gutters {
-      border-right: 1px solid #e2e8f0;
-      background: #f1f5f9;
-    }
-
-    .CodeMirror-linenumber {
-      color: #94a3b8;
-    }
-
-    .cm-s-light-studio .cm-keyword { color: #2563eb; font-weight: 700; }
-    .cm-s-light-studio .cm-def,
-    .cm-s-light-studio .cm-variable-2 { color: #0f766e; }
-    .cm-s-light-studio .cm-variable { color: #0f172a; }
-    .cm-s-light-studio .cm-property { color: #7c3aed; }
-    .cm-s-light-studio .cm-string { color: #b45309; }
-    .cm-s-light-studio .cm-number { color: #dc2626; }
-    .cm-s-light-studio .cm-comment { color: #64748b; font-style: italic; }
-    .cm-s-light-studio .cm-operator { color: #9333ea; }
-    .cm-s-light-studio .cm-builtin,
-    .cm-s-light-studio .cm-atom { color: #0891b2; }
-    .cm-s-light-studio .cm-tag { color: #2563eb; }
-    .cm-s-light-studio .cm-attribute { color: #7c3aed; }
-  </style>
 </head>
-<body class="min-h-screen overflow-x-hidden overflow-y-auto bg-white font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica_Neue',sans-serif] text-[#333] antialiased">
-  <form id="studio-form" class="min-h-screen" method="post">
-    <button
-      id="preview-trigger"
-      class="hidden"
-      type="button"
-      hx-post="/preview"
-      hx-include="#studio-form"
-      hx-target="#preview-panel"
-      hx-swap="innerHTML"
-      hx-trigger="refreshPreview"
-    ></button>
-
+<body class="min-h-screen overflow-x-hidden bg-white font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica_Neue',sans-serif] text-slate-900 antialiased">
+  <div class="flex min-h-screen flex-col">
     {% include "_navigation.html" %}
 
-    <main class="mx-auto flex w-full max-w-[1265px] flex-col items-center px-4 pb-24 sm:pb-28">
-      <section class="flex min-h-[calc(100vh-4rem)] w-full max-w-[1040px] flex-col items-center justify-center py-12 text-center" aria-labelledby="hero-title">
+    <main class="mx-auto flex w-full max-w-[1265px] flex-1 flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
+      <section class="w-full max-w-[1040px]" aria-labelledby="hero-title">
         <p class="mb-4 text-sm font-bold uppercase tracking-[0.24em] text-slate-500">Code Typer Studio</p>
         <h1 id="hero-title" class="mx-auto max-w-[1000px] text-5xl font-black leading-[0.98] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
-          Turn code into
+          Turn ideas into
           <span class="relative inline-block text-blue-600">
-            smooth typing animations
+            smooth developer animations
             <svg class="absolute -bottom-2 left-0 h-4 w-full text-blue-300 sm:-bottom-3 sm:h-5" viewBox="0 0 420 34" fill="none" aria-hidden="true" preserveAspectRatio="none">
               <path d="M8 24C74 5 143 4 211 15C279 26 351 28 412 12" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
             </svg>
           </span>
           in seconds.
         </h1>
-        <p class="mx-auto mt-7 max-w-[760px] text-lg font-medium leading-8 text-slate-700 sm:text-xl">
-          Modern code-typing simulator tool for content creators, developers, and educators.
-        </p>
-        <div class="mt-10 flex flex-row items-center justify-center gap-3">
-          <a class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-full bg-slate-950 px-5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20 sm:h-11 sm:px-8 sm:text-base" href="#preview">
-            Get started
+        <p class="mx-auto mt-8 max-w-[760px] text-lg font-medium leading-8 text-slate-700 sm:text-xl">Create syntax-highlighted code typing videos or realistic macOS terminal animations from two focused studios.</p>
+        <div class="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <a class="inline-flex h-11 items-center justify-center rounded-full bg-blue-600 px-7 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/25 sm:text-base" href="/code-typer">Open Code Typer</a>
+          <a class="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-7 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20 sm:text-base" href="/terminal">Open Terminal Studio</a>
+        </div>
+        <div class="mx-auto mt-14 grid max-w-3xl gap-4 text-left sm:grid-cols-2">
+          <a class="group rounded-2xl border border-blue-100 bg-blue-50 p-5 transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-100/60" href="/code-typer">
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Code Typer</p>
+            <h2 class="mt-2 text-xl font-black text-slate-950">Animate source code</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-600">Choose a language, theme, typing mode, speed, cursor, and frame size, then export HTML, JSON, or GIF.</p>
           </a>
-          <a class="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-slate-300 bg-white/55 px-4 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-slate-400 hover:bg-white/80 focus:outline-none focus:ring-4 focus:ring-slate-900/10 sm:h-11 sm:gap-3 sm:px-7 sm:text-base" href="https://www.youtube.com/@ByteWithoutBite">
-            Watch video
+          <a class="group rounded-2xl border border-violet-100 bg-violet-50 p-5 transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-100/60" href="/terminal">
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-violet-600">Terminal Studio</p>
+            <h2 class="mt-2 text-xl font-black text-slate-950">Animate terminal output</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-600">Type commands word by word and reveal semantically colorized output in a macOS-style terminal.</p>
           </a>
         </div>
-      </section>
-
-      <section class="mt-16 flex w-full scroll-mt-24 justify-center sm:mt-20 lg:mt-24" id="preview" aria-label="Animation preview">
-        <div class="w-full max-w-[700px]">
-          <div class="relative overflow-hidden">
-            <div id="preview-panel" class="h-[300px] min-w-0 overflow-hidden bg-white">
-              {% include "_preview.html" %}
-            </div>
-          </div>
-          <strong class="sr-only" id="preview-status">Ready</strong>
-          <nav class="mt-6 flex flex-wrap justify-center gap-4" aria-label="Primary actions">
-            <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/25" type="button" onclick="htmx.trigger(document.getElementById('preview-trigger'), 'refreshPreview')">
-              Restart
-            </button>
-            <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/25" type="submit" formaction="/download/html" formmethod="post">
-              Export HTML
-            </button>
-            <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/25" type="submit" formaction="/download/gif" formmethod="post">
-              Export GIF
-            </button>
-            <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/25" type="submit" formaction="/download/project" formmethod="post">
-              Export JSON
-            </button>
-          </nav>
-        </div>
-      </section>
-
-      <section class="mt-12 flex w-full max-w-[843px] flex-col gap-3" aria-label="Studio controls">
-        <div class="grid rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100 sm:grid-cols-[1fr_1fr_1.4fr_1fr] sm:gap-2">
-          <div class="relative block px-0 py-1 sm:px-0" data-custom-select="language">
-            <span class="mb-1 block text-xs font-bold text-[#333]">Language</span>
-            <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="language-menu">
-              <img class="h-5 w-5 object-contain" id="language-icon" src="{{ url_for('static', path='icons/python.svg') }}" alt="">
-              <span class="truncate" id="language-value">{{ values.language|title }}</span>
-            </button>
-            <select class="sr-only" id="language" name="language" tabindex="-1" aria-hidden="true">
-              {% for language in languages %}
-                <option value="{{ language }}" {% if values.language == language %}selected{% endif %}>{{ language_catalog[language].label }}</option>
-              {% endfor %}
-            </select>
-            <div class="absolute left-0 top-full z-50 mt-2 hidden max-h-72 min-w-full w-max max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200" id="language-menu" data-select-menu role="listbox"></div>
-          </div>
-
-          <div class="relative block px-0 py-1 sm:px-0" data-custom-select="theme_name">
-            <span class="mb-1 block text-xs font-bold text-[#333]">Theme</span>
-            <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="theme-menu">
-              <span class="grid h-5 w-5 place-items-center rounded bg-slate-900 text-[9px] font-bold text-white" aria-hidden="true">fn</span>
-              <span class="truncate" id="theme-value">{{ values.theme_name }}</span>
-            </button>
-            <select class="sr-only" id="theme_name" name="theme_name" tabindex="-1" aria-hidden="true">
-              {% for theme in themes %}
-                <option value="{{ theme }}" {% if values.theme_name == theme %}selected{% endif %}>{{ theme }}</option>
-              {% endfor %}
-            </select>
-            <div class="absolute left-0 top-full z-50 mt-2 hidden max-h-72 min-w-full w-max max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200" id="theme-menu" data-select-menu role="listbox"></div>
-          </div>
-
-          <label class="block px-0 py-1 sm:px-0">
-            <span class="mb-1 block text-xs font-bold text-[#333]">File Name</span>
-            <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="title" name="title" value="{{ values.title }}" placeholder="File name">
-          </label>
-
-          <div class="relative block px-0 py-1 sm:px-0" data-custom-select="sample_name">
-            <span class="mb-1 block text-xs font-bold text-[#333]">Sample</span>
-            <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="sample-menu">
-              <span class="grid h-5 w-5 place-items-center" data-select-icon aria-hidden="true"></span>
-              <span class="truncate" id="sample-value">{{ default_sample }}</span>
-            </button>
-            <select id="sample_name" class="sr-only" tabindex="-1" aria-hidden="true">
-              {% for name in samples %}
-                <option value="{{ name }}" {% if name == default_sample %}selected{% endif %}>{{ name }}</option>
-              {% endfor %}
-            </select>
-            <div class="absolute left-0 top-full z-50 mt-2 hidden max-h-72 min-w-full w-max max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200" id="sample-menu" data-select-menu role="listbox"></div>
-          </div>
-        </div>
-
-        <section class="rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100" id="editor" aria-label="Code editor">
-          <div class="mb-2 flex items-center justify-between gap-2">
-            <div class="text-xs font-bold text-[#333]">Code</div>
-            <div class="text-xs font-normal text-slate-500">Edit the code here</div>
-          </div>
-          <textarea id="code" name="code" spellcheck="false" class="h-56 w-full resize-y rounded-md border-0 bg-gray-100 p-3 font-mono text-sm leading-6 text-black outline-none focus:ring-2 focus:ring-sky-500/30">{{ values.code }}</textarea>
-        </section>
-
-        <details class="group rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100">
-          <summary class="flex cursor-pointer list-none items-center justify-between rounded-md px-1 py-1 text-xs font-bold text-[#333] outline-none focus-visible:ring-2 focus-visible:ring-sky-500/30 [&::-webkit-details-marker]:hidden">
-            Settings
-            <span class="text-slate-500 transition group-open:rotate-180" aria-hidden="true">v</span>
-          </summary>
-
-          <div class="mt-2 grid gap-2 border-t border-slate-100 pt-2 sm:grid-cols-2 lg:grid-cols-4">
-            <label class="block">
-              <span class="mb-1 block text-xs font-bold text-[#333]">Font Family</span>
-              <select class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="font_family" name="font_family">
-                {% for font in fonts %}
-                  <option value="{{ font }}" {% if values.font_family == font %}selected{% endif %}>{{ font.split(",")[0] }}</option>
-                {% endfor %}
-              </select>
-            </label>
-
-            <label class="block">
-              <span class="mb-1 block text-xs font-bold text-[#333]">Font Size</span>
-              <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="font_size" name="font_size" type="number" min="12" max="32" value="{{ values.font_size }}">
-            </label>
-
-            <label class="block">
-              <span class="mb-1 block text-xs font-bold text-[#333]">Speed</span>
-              <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="speed_ms" name="speed_ms" type="number" min="4" max="120" step="1" value="{{ values.speed_ms }}">
-            </label>
-
-            <label class="block">
-              <span class="mb-1 block text-xs font-bold text-[#333]">Typing Mode</span>
-              <select class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="typing_mode" name="typing_mode">
-                {% for mode in typing_modes %}
-                  <option value="{{ mode.value }}" {% if values.typing_mode == mode.value %}selected{% endif %}>{{ mode.label }}</option>
-                {% endfor %}
-              </select>
-            </label>
-
-            <label class="block">
-              <span class="mb-1 block text-xs font-bold text-[#333]">Line Pause</span>
-              <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="line_pause_ms" name="line_pause_ms" type="number" min="0" max="800" step="10" value="{{ values.line_pause_ms }}">
-            </label>
-
-            <label class="block">
-              <span class="mb-1 block text-xs font-bold text-[#333]">Start Delay</span>
-              <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="start_delay_ms" name="start_delay_ms" type="number" min="0" max="2500" step="50" value="{{ values.start_delay_ms }}">
-            </label>
-
-            <label class="block">
-              <span class="mb-1 block text-xs font-bold text-[#333]">Cursor</span>
-              <select class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="cursor" name="cursor">
-                {% for cursor in ["bar", "block", "underline"] %}
-                  <option value="{{ cursor }}" {% if values.cursor == cursor %}selected{% endif %}>{{ cursor|title }}</option>
-                {% endfor %}
-              </select>
-            </label>
-
-            <label class="block">
-              <span class="mb-1 block text-xs font-bold text-[#333]">Frame Size</span>
-              <select class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="aspect_ratio" name="aspect_ratio">
-                {% for ratio in aspect_ratios %}
-                  <option value="{{ ratio.value }}" {% if values.aspect_ratio == ratio.value %}selected{% endif %}>{{ ratio.label }}</option>
-                {% endfor %}
-              </select>
-            </label>
-
-            <div class="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-4">
-              <label class="inline-flex h-8 cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-2 text-sm text-slate-700">
-                <input class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500" name="show_line_numbers" type="checkbox" {% if values.show_line_numbers %}checked{% endif %}>
-                Line Numbers
-              </label>
-              <label class="inline-flex h-8 cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-2 text-sm text-slate-700">
-                <input class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500" name="show_window_chrome" type="checkbox" {% if values.show_window_chrome %}checked{% endif %}>
-                Window Bar
-              </label>
-              <label class="inline-flex h-8 cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-2 text-sm text-slate-700">
-                <input class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500" name="autoplay" type="checkbox" {% if values.autoplay %}checked{% endif %}>
-                Autoplay
-              </label>
-              <label class="inline-flex h-8 cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-2 text-sm text-slate-700">
-                <input class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500" name="loop" type="checkbox" {% if values.loop %}checked{% endif %}>
-                Loop
-              </label>
-            </div>
-          </div>
-        </details>
-
-        <input type="hidden" name="line_height" value="{{ values.line_height }}">
-        <input type="hidden" name="radius" value="{{ values.radius }}">
       </section>
     </main>
 
-    <footer class="mx-auto flex w-full max-w-[1265px] border-t border-slate-900/10 px-4 pb-8 pt-6 text-sm font-medium text-slate-700 sm:px-6">
-      <p>
-        &copy; {{ current_year }} Code Typer Studio. Developed By
-        <a
-          class="font-bold text-slate-900 underline decoration-slate-400 underline-offset-4 transition hover:text-sky-700 hover:decoration-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
-          href="https://www.linkedin.com/in/%F0%90%A9%A9%F0%90%A9%AA%F0%90%A9%B0%F0%90%A9%A2%F0%90%A9%BA%F0%90%A9%A5%F0%90%A9%A9-%F0%90%A9%A9%F0%90%A9%A7%F0%90%A9%A5%F0%90%A9%AC%F0%90%A9%A0-2a2139179/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          tesfahiwet truneh
-        </a>
-      </p>
-    </footer>
-
-    <div class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto p-4 sm:p-6" id="about-modal" data-modal aria-hidden="true">
-      <div class="absolute inset-0 bg-slate-950/65 opacity-0 backdrop-blur-sm transition-opacity duration-200" data-modal-backdrop></div>
-      <section class="relative w-full max-w-xl scale-95 overflow-hidden rounded-3xl bg-white opacity-0 shadow-2xl shadow-slate-950/30 ring-1 ring-white/20 transition duration-200" role="dialog" aria-modal="true" aria-labelledby="about-modal-title" aria-describedby="about-modal-description" tabindex="-1" data-modal-panel>
-        <div class="px-6 py-7 sm:px-8 sm:py-8">
-          <h2 class="sr-only" id="about-modal-title">About Code Typer Studio</h2>
-          <button class="absolute right-5 top-5 grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/40" type="button" aria-label="Close About Us modal" data-modal-close>
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M6 6l12 12M18 6 6 18" stroke-linecap="round"/>
-            </svg>
-          </button>
-          <p class="pr-12 text-base leading-7 text-slate-600" id="about-modal-description">
-            It was built for people who explain, teach, and share code. Customize the language, theme, speed, cursor, dimensions, and more, then export an animation ready for your next project.
-          </p>
-          <div class="mt-6 grid gap-3 sm:grid-cols-3">
-            <article class="rounded-2xl bg-blue-50 p-4 ring-1 ring-blue-100">
-              <span class="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-white">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m15 10 4.5-2.5v9L15 14M4.5 6.5h9a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 3 16V8a1.5 1.5 0 0 1 1.5-1.5Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </span>
-              <h3 class="mt-3 font-bold text-slate-950">Content creators</h3>
-              <p class="mt-1 text-sm leading-6 text-slate-600">Create engaging code visuals for videos, reels, and tutorials.</p>
-            </article>
-            <article class="rounded-2xl bg-violet-50 p-4 ring-1 ring-violet-100">
-              <span class="grid h-9 w-9 place-items-center rounded-xl bg-violet-600 text-white">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 10 9-5 9 5-9 5-9-5Zm4 2.3V17l5 2.5 5-2.5v-4.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </span>
-              <h3 class="mt-3 font-bold text-slate-950">Educators</h3>
-              <p class="mt-1 text-sm leading-6 text-slate-600">Make lessons easier to follow with step-by-step code playback.</p>
-            </article>
-            <article class="rounded-2xl bg-cyan-50 p-4 ring-1 ring-cyan-100">
-              <span class="grid h-9 w-9 place-items-center rounded-xl bg-cyan-600 text-white">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 8 4 12l4 4M16 8l4 4-4 4M14 5l-4 14" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </span>
-              <h3 class="mt-3 font-bold text-slate-950">Developers</h3>
-              <p class="mt-1 text-sm leading-6 text-slate-600">Present snippets cleanly in demos, portfolios, and documentation.</p>
-            </article>
-          </div>
-          <div class="mt-7 flex justify-end">
-            <button class="rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20" type="button" data-modal-close>Got it</button>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <div class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto p-4 sm:p-6" id="contact-modal" data-modal aria-hidden="true">
-      <div class="absolute inset-0 bg-slate-950/65 opacity-0 backdrop-blur-sm transition-opacity duration-200" data-modal-backdrop></div>
-      <section class="relative w-full max-w-xl scale-95 overflow-hidden rounded-3xl bg-white opacity-0 shadow-2xl shadow-slate-950/30 ring-1 ring-white/20 transition duration-200" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title" aria-describedby="contact-modal-description" tabindex="-1" data-modal-panel>
-        <button class="absolute right-5 top-5 z-10 grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/40" type="button" aria-label="Close Contact Us modal" data-modal-close>
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke-linecap="round"/></svg>
-        </button>
-        <div class="px-6 pb-7 pt-8 sm:px-8 sm:pb-8">
-          <span class="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-600/25">
-            <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6.5h16v11H4v-11Z" stroke-linejoin="round"/><path d="m5 7.5 7 5 7-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </span>
-          <p class="mt-5 text-sm font-bold uppercase tracking-[0.2em] text-blue-600">We’re listening</p>
-          <h2 class="mt-2 text-3xl font-black tracking-tight text-slate-950" id="contact-modal-title">Contact us</h2>
-          <p class="mt-3 text-base leading-7 text-slate-600" id="contact-modal-description">
-            Found a problem or bug in the system? Have a suggestion that could make Code Typer Studio better? Send us an email and include as much detail as possible.
-          </p>
-          <div class="mt-6 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200 sm:flex sm:items-center sm:justify-between sm:gap-4">
-            <div class="min-w-0">
-              <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Email support</p>
-              <p class="mt-1 truncate font-bold text-slate-950">eminemmerne@gmail.com</p>
-            </div>
-            <a class="mt-4 inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/25 sm:mt-0" href="mailto:eminemmerne@gmail.com?subject=Code%20Typer%20Studio%20Feedback">
-              Send email
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </a>
-          </div>
-          <p class="mt-4 text-sm leading-6 text-slate-500">For bug reports, please mention what you were doing, what you expected, and what happened instead.</p>
-        </div>
-      </section>
-    </div>
-
+    <footer class="border-t border-slate-200 px-4 py-6 text-center text-sm text-slate-500">&copy; {{ current_year }} Code Typer Studio</footer>
+    {% include "_shared_modals.html" %}
     {% include "_buy_me_coffee.html" %}
-  </form>
-
-  <script id="language-catalog" type="application/json">{{ language_catalog | tojson }}</script>
-  <script id="sample-data" type="application/json">{{ samples_json | safe }}</script>
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/simple.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/markdown/markdown.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/rust/rust.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/go/go.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/ruby/ruby.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/php/php.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/shell/shell.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/powershell/powershell.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/yaml/yaml.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/swift/swift.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sass/sass.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/dart/dart.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/r/r.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/octave/octave.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/perl/perl.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/lua/lua.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/erlang/erlang.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clojure/clojure.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/groovy/groovy.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/vb/vb.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/mllike/mllike.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/haskell/haskell.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/julia/julia.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/dockerfile/dockerfile.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/cmake/cmake.min.js"></script>
-  <script src="{{ url_for('static', path='app.js') }}?v=14"></script>
+  </div>
+  <script src="{{ url_for('static', path='shared.js') }}?v=1"></script>
 </body>
 </html>
