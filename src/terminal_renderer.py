@@ -13,6 +13,16 @@ from PIL import Image, ImageDraw, ImageFont
 
 TERMINAL_WIDTH = 700
 TERMINAL_HEIGHT = 300
+DEFAULT_TERMINAL_COMMAND = "cargo run"
+DEFAULT_TERMINAL_OUTPUT = """error[E0506]: cannot assign to `balance` because it is borrowed
+ --> src/main.rs:5:5
+  |
+3 |     let receipt = &balance;
+  |                   -------- `balance` is borrowed here
+5 |     balance += 50;
+  |     ^^^^^^^^^^^^^ `balance` is assigned to here but it was already borrowed
+7 |     println!("Old receipt: {receipt}");
+  |                             ------- borrow later used here"""
 OUTPUT_BASE_COLOR = "#d7d7d7"
 ANSI_COLORS = {
     30: "#5c6370",
@@ -60,8 +70,8 @@ SEMANTIC_COLORS = {
 class TerminalOptions:
     title: str = "eminem — zsh"
     prompt: str = "eminem@macbook ~ %"
-    command: str = "python --version"
-    output: str = "Python 3.12.4"
+    command: str = DEFAULT_TERMINAL_COMMAND
+    output: str = DEFAULT_TERMINAL_OUTPUT
     word_speed_ms: int = 320
     output_delay_ms: int = 1000
     loop: bool = False
@@ -317,18 +327,25 @@ body.embedded .terminal { width: 100%; height: 100%; box-shadow: none; }
 }
 .screen {
   height: calc(100% - 42px);
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   padding: 19px 21px 22px;
   font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   font-size: 16px;
   line-height: 1.5;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: #62656b #1b1b1d;
+  scrollbar-gutter: stable;
 }
-.screen::-webkit-scrollbar { display: none; }
-.command-line { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.screen::-webkit-scrollbar { width: 10px; height: 10px; }
+.screen::-webkit-scrollbar-track { background: #1b1b1d; }
+.screen::-webkit-scrollbar-thumb { border: 2px solid #1b1b1d; border-radius: 999px; background: #62656b; }
+.screen::-webkit-scrollbar-thumb:hover { background: #7b7f86; }
+.screen::-webkit-scrollbar-corner { background: #1b1b1d; }
+.command-line { width: max-content; min-width: 100%; margin: 0; white-space: pre; }
 .prompt { color: #75c7ff; font-weight: 600; }
 .command { color: #f5f5f5; }
-.output { margin: 2px 0 0; color: #d7d7d7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.output { width: max-content; min-width: 100%; margin: 2px 0 0; color: #d7d7d7; white-space: pre; }
 .output-token { color: var(--token-color); }
 .cursor {
   display: inline-block;
@@ -396,7 +413,8 @@ body.embedded .terminal { width: 100%; height: 100%; box-shadow: none; }
       fragment.appendChild(span);
     });
     output.replaceChildren(fragment);
-    screen.scrollTop = screen.scrollHeight;
+    screen.scrollTop = 0;
+    screen.scrollLeft = 0;
     if (config.loop) schedule(restart, 2200);
   }
 

@@ -14,7 +14,13 @@ from src.gif_exporter import build_typing_gif
 from src.languages import LANGUAGE_CATALOG, LANGUAGE_EXTENSIONS, LANGUAGES
 from src.renderer import build_typing_html, export_project_json, make_render_options
 from src.samples import SAMPLES
-from src.terminal_renderer import TerminalOptions, build_terminal_gif, build_terminal_html
+from src.terminal_renderer import (
+    DEFAULT_TERMINAL_COMMAND,
+    DEFAULT_TERMINAL_OUTPUT,
+    TerminalOptions,
+    build_terminal_gif,
+    build_terminal_html,
+)
 from src.themes import THEMES
 
 
@@ -215,8 +221,8 @@ def _default_terminal_payload() -> dict[str, Any]:
     return {
         "title": "eminem — zsh",
         "prompt": "eminem@macbook ~ %",
-        "command": "python --version",
-        "output": "Python 3.12.4",
+        "command": DEFAULT_TERMINAL_COMMAND,
+        "output": DEFAULT_TERMINAL_OUTPUT,
         "word_speed_ms": 320,
         "output_delay_ms": 1000,
         "loop": False,
