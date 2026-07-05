@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Code Typer Studio{% endblock %}</title>
+  {% include "_head_assets.html" %}
+</head>
+<body class="min-h-screen overflow-x-hidden font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica_Neue',sans-serif] text-slate-900 antialiased">
+  <div class="flex min-h-screen flex-col">
+    {% include "_navigation.html" %}
+    <div class="htmx-indicator fixed inset-x-0 top-0 z-[70] h-0.5 overflow-hidden" id="page-loading" role="status" aria-label="Loading page">
+      <div class="h-full w-full origin-left animate-pulse bg-blue-600"></div>
+    </div>
+    <main id="page-content" class="flex-1 {% block page_class %}bg-white{% endblock %}" hx-history-elt>
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="border-t border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-500">&copy; {{ current_year }} Code Typer Studio</footer>
+    {% include "_shared_modals.html" %}
+    {% include "_buy_me_coffee.html" %}
+  </div>
+  {% include "_scripts.html" %}
+</body>
+</html>

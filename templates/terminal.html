@@ -1,18 +1,11 @@
-<!doctype html>
-<html lang="en" class="scroll-smooth">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Terminal Simulator — Code Typer Studio</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="min-h-screen bg-slate-50 font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',sans-serif] text-slate-900 antialiased">
-  <form id="terminal-form" class="min-h-screen" method="post">
-    <button id="terminal-preview-trigger" class="hidden" type="button" hx-post="/terminal/preview" hx-include="#terminal-form" hx-target="#terminal-preview" hx-swap="innerHTML" hx-trigger="refreshPreview"></button>
+{% extends "_base.html" %}
 
-    {% include "_navigation.html" %}
+{% block title %}Terminal Simulator — Code Typer Studio{% endblock %}
+{% block content %}
+<form id="terminal-form" class="min-h-full bg-slate-50" method="post">
+  <button id="terminal-preview-trigger" class="hidden" type="button" hx-post="/terminal/preview" hx-include="#terminal-form" hx-target="#terminal-preview" hx-swap="innerHTML" hx-trigger="refreshPreview"></button>
 
-    <main class="mx-auto w-full max-w-[1180px] px-4 py-12 sm:px-6 sm:py-16">
+  <div class="mx-auto w-full max-w-[1180px] px-4 py-12 sm:px-6 sm:py-16">
       <section class="text-center" aria-labelledby="terminal-title">
         <p class="text-sm font-bold uppercase tracking-[0.22em] text-blue-600">Terminal Studio</p>
         <h1 id="terminal-title" class="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Create a macOS terminal animation</h1>
@@ -67,14 +60,7 @@
           </div>
         </aside>
       </section>
-    </main>
+    </div>
 
-    <footer class="border-t border-slate-200 bg-white py-6 text-center text-sm text-slate-500">&copy; {{ current_year }} Code Typer Studio</footer>
-    {% include "_shared_modals.html" %}
-    {% include "_buy_me_coffee.html" %}
-  </form>
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <script src="{{ url_for('static', path='shared.js') }}?v=1"></script>
-  <script src="{{ url_for('static', path='terminal.js') }}?v=1"></script>
-</body>
-</html>
+</form>
+{% endblock %}

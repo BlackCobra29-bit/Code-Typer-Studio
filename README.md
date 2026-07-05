@@ -25,6 +25,9 @@ Terminal Studio recreates a macOS Terminal window at a fixed 700×300 export siz
 
 ## Features
 
+- Smooth HTMX navigation between Home, Code Typer, and Terminal Studio without full-page reloads
+- Browser history, URL updates, loading feedback, focus management, and view transitions for page swaps
+
 ### Code animation
 
 - Live typing preview with restart and playback controls
@@ -66,10 +69,12 @@ flowchart LR
 ```
 
 1. The browser collects the selected code or terminal settings.
-2. HTMX sends editor changes to a FastAPI preview endpoint without reloading the page.
-3. The HTML renderer builds an isolated animation inside an iframe.
-4. Export endpoints use the same settings to generate standalone HTML, JSON, or GIF files.
-5. Pillow renders GIF frames server-side, so exported animations do not require a browser recording step.
+2. HTMX navigation keeps the shared shell mounted and swaps only `#page-content`, while preserving normal URLs and browser history.
+3. HTMX sends editor changes to FastAPI preview endpoints without reloading the page.
+4. Page-specific JavaScript initializes after each swap, so both studios remain fully interactive.
+5. The HTML renderer builds an isolated animation inside an iframe.
+6. Export endpoints use the same settings to generate standalone HTML, JSON, or GIF files.
+7. Pillow renders GIF frames server-side, so exported animations do not require a browser recording step.
 
 ## Technology Stack
 
@@ -79,7 +84,7 @@ flowchart LR
 | **FastAPI** | Web routes, form processing, and download responses |
 | **Uvicorn** | ASGI development and production server |
 | **Jinja2** | Server-rendered pages and iframe preview templates |
-| **HTMX** | Live preview updates without a frontend framework |
+| **HTMX** | Partial-page navigation, history management, transitions, and live preview updates |
 | **Tailwind CSS** | Responsive layout and interface styling |
 | **CodeMirror 5** | Browser-based source-code editor |
 | **Pygments** | Language detection support and syntax token colors |
@@ -180,13 +185,17 @@ Terminal output can be plain text or contain ANSI foreground sequences. Plain te
 |   `-- themes.py                  # Editor theme definitions
 |-- static/
 |   |-- app.js                     # Code Studio interactions
-|   |-- shared.js                  # Shared modal interactions
+|   |-- code_studio.css            # Shared editor and transition styles
+|   |-- shared.js                  # Shared navigation, history, and modal interactions
 |   |-- terminal.js                # Terminal Studio interactions
 |   `-- icons/                     # Language and file icons
 `-- templates/
     |-- index.html                 # Landing page
     |-- code_typer.html            # Code Studio page
     |-- terminal.html              # Terminal Studio page
+    |-- _base.html                 # Shared application shell and HTMX target
+    |-- _head_assets.html          # Shared styles and browser dependencies
+    |-- _scripts.html              # Shared HTMX, CodeMirror, and page scripts
     |-- _navigation.html           # Shared responsive navigation
     |-- _buy_me_coffee.html        # Shared support button
     |-- _shared_modals.html        # Terminal-page About and Contact modals

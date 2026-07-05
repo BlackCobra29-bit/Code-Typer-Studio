@@ -1,0 +1,48 @@
+.CodeMirror {
+  height: 14rem;
+  border-radius: 0.375rem;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}
+
+.CodeMirror-focused {
+  outline: 2px solid rgb(14 165 233 / 0.3);
+  outline-offset: 0;
+}
+
+.CodeMirror-gutters { border-right: 1px solid #e2e8f0; background: #f1f5f9; }
+.CodeMirror-linenumber { color: #94a3b8; }
+.cm-s-light-studio .cm-keyword { color: #2563eb; font-weight: 700; }
+.cm-s-light-studio .cm-def,
+.cm-s-light-studio .cm-variable-2 { color: #0f766e; }
+.cm-s-light-studio .cm-variable { color: #0f172a; }
+.cm-s-light-studio .cm-property { color: #7c3aed; }
+.cm-s-light-studio .cm-string { color: #b45309; }
+.cm-s-light-studio .cm-number { color: #dc2626; }
+.cm-s-light-studio .cm-comment { color: #64748b; font-style: italic; }
+.cm-s-light-studio .cm-operator { color: #9333ea; }
+.cm-s-light-studio .cm-builtin,
+.cm-s-light-studio .cm-atom { color: #0891b2; }
+.cm-s-light-studio .cm-tag { color: #2563eb; }
+.cm-s-light-studio .cm-attribute { color: #7c3aed; }
+
+.htmx-indicator { opacity: 0; transition: opacity 120ms ease; }
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator { opacity: 1; }
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(page-content) { animation: 140ms ease-out both page-out; }
+  ::view-transition-new(page-content) { animation: 220ms ease-out both page-in; }
+  #page-content { view-transition-name: page-content; }
+}
+
+@keyframes page-out {
+  to { opacity: 0; transform: translateY(4px); }
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+}

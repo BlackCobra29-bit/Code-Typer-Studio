@@ -1,52 +1,47 @@
-<!doctype html>
-<html lang="en" class="scroll-smooth">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Code Typer Studio</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="min-h-screen overflow-x-hidden bg-white font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica_Neue',sans-serif] text-slate-900 antialiased">
-  <div class="flex min-h-screen flex-col">
-    {% include "_navigation.html" %}
+{% extends "_base.html" %}
 
-    <main class="mx-auto flex w-full max-w-[1265px] flex-1 flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
-      <section class="w-full max-w-[1040px]" aria-labelledby="hero-title">
-        <p class="mb-4 text-sm font-bold uppercase tracking-[0.24em] text-slate-500">Code Typer Studio</p>
-        <h1 id="hero-title" class="mx-auto max-w-[1000px] text-5xl font-black leading-[0.98] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
-          Turn ideas into
-          <span class="relative inline-block text-blue-600">
-            smooth developer animations
-            <svg class="absolute -bottom-2 left-0 h-4 w-full text-blue-300 sm:-bottom-3 sm:h-5" viewBox="0 0 420 34" fill="none" aria-hidden="true" preserveAspectRatio="none">
-              <path d="M8 24C74 5 143 4 211 15C279 26 351 28 412 12" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
-            </svg>
-          </span>
-          in seconds.
-        </h1>
-        <p class="mx-auto mt-8 max-w-[760px] text-lg font-medium leading-8 text-slate-700 sm:text-xl">Create syntax-highlighted code typing videos or realistic macOS terminal animations from two focused studios.</p>
-        <div class="mt-10 flex flex-wrap items-center justify-center gap-3">
-          <a class="inline-flex h-11 items-center justify-center rounded-full bg-blue-600 px-7 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/25 sm:text-base" href="/code-typer">Open Code Typer</a>
-          <a class="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-7 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20 sm:text-base" href="/terminal">Open Terminal Studio</a>
-        </div>
-        <div class="mx-auto mt-14 grid max-w-3xl gap-4 text-left sm:grid-cols-2">
-          <a class="group rounded-2xl border border-blue-100 bg-blue-50 p-5 transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-100/60" href="/code-typer">
-            <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Code Typer</p>
-            <h2 class="mt-2 text-xl font-black text-slate-950">Animate source code</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-600">Choose a language, theme, typing mode, speed, cursor, and frame size, then export HTML, JSON, or GIF.</p>
-          </a>
-          <a class="group rounded-2xl border border-violet-100 bg-violet-50 p-5 transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-100/60" href="/terminal">
-            <p class="text-xs font-bold uppercase tracking-[0.18em] text-violet-600">Terminal Studio</p>
-            <h2 class="mt-2 text-xl font-black text-slate-950">Animate terminal output</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-600">Type commands word by word and reveal semantically colorized output in a macOS-style terminal.</p>
-          </a>
-        </div>
-      </section>
-    </main>
+{% block title %}Code Typer Studio{% endblock %}
 
-    <footer class="border-t border-slate-200 px-4 py-6 text-center text-sm text-slate-500">&copy; {{ current_year }} Code Typer Studio</footer>
-    {% include "_shared_modals.html" %}
-    {% include "_buy_me_coffee.html" %}
-  </div>
-  <script src="{{ url_for('static', path='shared.js') }}?v=1"></script>
-</body>
-</html>
+{% block content %}
+<div
+  class="mx-auto flex min-h-full w-full max-w-[1265px] flex-col items-center justify-center px-4 py-16 text-center sm:px-6"
+  hx-boost="true"
+  hx-target="#page-content"
+  hx-select="#page-content"
+  hx-swap="outerHTML transition:true show:top"
+  hx-push-url="true"
+  hx-indicator="#page-loading"
+  hx-sync="#page-content:replace"
+>
+  <section class="w-full max-w-[1040px]" aria-labelledby="hero-title">
+    <p class="mb-4 text-sm font-bold uppercase tracking-[0.24em] text-slate-500">Code Typer Studio</p>
+    <h1 id="hero-title" class="mx-auto max-w-[1000px] text-5xl font-black leading-[0.98] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
+      Turn ideas into
+      <span class="relative inline-block text-blue-600">
+        smooth developer animations
+        <svg class="absolute -bottom-2 left-0 h-4 w-full text-blue-300 sm:-bottom-3 sm:h-5" viewBox="0 0 420 34" fill="none" aria-hidden="true" preserveAspectRatio="none">
+          <path d="M8 24C74 5 143 4 211 15C279 26 351 28 412 12" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+        </svg>
+      </span>
+      in seconds.
+    </h1>
+    <p class="mx-auto mt-8 max-w-[760px] text-lg font-medium leading-8 text-slate-700 sm:text-xl">Create syntax-highlighted code typing videos or realistic macOS terminal animations from two focused studios.</p>
+    <div class="mt-10 flex flex-wrap items-center justify-center gap-3">
+      <a class="inline-flex h-11 items-center justify-center rounded-full bg-blue-600 px-7 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/25 sm:text-base" href="/code-typer">Open Code Typer</a>
+      <a class="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-7 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20 sm:text-base" href="/terminal">Open Terminal Studio</a>
+    </div>
+    <div class="mx-auto mt-14 grid max-w-3xl gap-4 text-left sm:grid-cols-2">
+      <a class="group rounded-2xl border border-blue-100 bg-blue-50 p-5 transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-100/60" href="/code-typer">
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Code Typer</p>
+        <h2 class="mt-2 text-xl font-black text-slate-950">Animate source code</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-600">Choose a language, theme, typing mode, speed, cursor, and frame size, then export HTML, JSON, or GIF.</p>
+      </a>
+      <a class="group rounded-2xl border border-violet-100 bg-violet-50 p-5 transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-100/60" href="/terminal">
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-violet-600">Terminal Studio</p>
+        <h2 class="mt-2 text-xl font-black text-slate-950">Animate terminal output</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-600">Type commands word by word and reveal semantically colorized output in a macOS-style terminal.</p>
+      </a>
+    </div>
+  </section>
+</div>
+{% endblock %}

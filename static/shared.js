@@ -84,3 +84,92 @@ document.addEventListener("keydown", (event) => {
     first.focus();
   }
 });
+
+const pageTitles = {
+  "/": "Code Typer Studio",
+  "/code-typer": "Code Typer — Code Typer Studio",
+  "/terminal": "Terminal Simulator — Code Typer Studio",
+};
+
+function normalizedPagePath(pathname = window.location.pathname) {
+  const cleanPath = pathname.replace(/\/+$/, "");
+  return cleanPath || "/";
+}
+
+function updateActiveNavigation(pathname = window.location.pathname) {
+  const currentPath = normalizedPagePath(pathname);
+  document.querySelectorAll("[data-page-link]").forEach((link) => {
+    const linkPath = normalizedPagePath(new URL(link.href, window.location.origin).pathname);
+    const isActive = linkPath === currentPath;
+    link.classList.toggle("text-blue-600", isActive);
+    link.classList.toggle("font-bold", isActive);
+    if (isActive) {
+      link.setAttribute("aria-current", "page");
+    } else {
+      link.removeAttribute("aria-current");
+    }
+  });
+}
+
+function updatePageTitle(responseText = "") {
+  if (responseText) {
+    const responseDocument = new DOMParser().parseFromString(responseText, "text/html");
+    const responseTitle = responseDocument.querySelector("title")?.textContent?.trim();
+    if (responseTitle) {
+      document.title = responseTitle;
+      return;
+    }
+  }
+  document.title = pageTitles[normalizedPagePath()] || "Code Typer Studio";
+}
+
+if (window.htmx) {
+  htmx.config.globalViewTransitions = true;
+  htmx.config.historyCacheSize = 10;
+  htmx.config.scrollIntoViewOnBoost = false;
+}
+
+document.body.addEventListener("htmx:beforeRequest", (event) => {
+  if (event.detail.target?.id !== "page-content") return;
+  document.getElementById("page-content")?.setAttribute("aria-busy", "true");
+  document.querySelector("header details[open]")?.removeAttribute("open");
+});
+
+document.body.addEventListener("htmx:beforeSwap", (event) => {
+  if (event.detail.target?.id !== "page-content" || event.detail.shouldSwap === false) return;
+  window.cleanupCodeStudio?.();
+  window.cleanupTerminalStudio?.();
+});
+
+document.body.addEventListener("htmx:afterSwap", (event) => {
+  if (event.detail.target?.id !== "page-content") return;
+
+  const pageContent = document.getElementById("page-content");
+  pageContent?.removeAttribute("aria-busy");
+  updatePageTitle(event.detail.xhr?.responseText || "");
+  const requestedPath = event.detail.requestConfig?.path;
+  const activePath = requestedPath
+    ? new URL(requestedPath, window.location.origin).pathname
+    : window.location.pathname;
+  updateActiveNavigation(activePath);
+
+  const pageHeading = pageContent?.querySelector("h1");
+  if (pageHeading) {
+    pageHeading.setAttribute("tabindex", "-1");
+    pageHeading.focus({ preventScroll: true });
+  }
+});
+
+document.body.addEventListener("htmx:responseError", (event) => {
+  if (event.detail.target?.id !== "page-content") return;
+  document.getElementById("page-content")?.removeAttribute("aria-busy");
+});
+
+document.body.addEventListener("htmx:historyRestore", () => {
+  updatePageTitle();
+  updateActiveNavigation();
+  window.initCodeStudio?.();
+  window.initTerminalStudio?.();
+});
+
+updateActiveNavigation();
