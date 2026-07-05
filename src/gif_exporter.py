@@ -219,24 +219,7 @@ def _gradient_background(width: int, height: int, gradient_name: str) -> Image.I
 
 @lru_cache(maxsize=32)
 def _base_canvas(width: int, height: int, padding: int, gradient_name: str, radius: int) -> Image.Image:
-    background = _gradient_background(width, height, gradient_name).copy()
-    draw = ImageDraw.Draw(background)
-    card_width = max(420, width - (padding * 2))
-    card_height = max(220, height - (padding * 2))
-    left = (width - card_width) // 2
-    top = (height - card_height) // 2
-    shadow_offset = max(12, padding // 3)
-    draw.rounded_rectangle(
-        (
-            left + shadow_offset,
-            top + shadow_offset,
-            left + shadow_offset + card_width,
-            top + shadow_offset + card_height,
-        ),
-        radius=radius,
-        fill=(15, 23, 42),
-    )
-    return background
+    return _gradient_background(width, height, gradient_name).copy()
 
 
 @lru_cache(maxsize=16)
