@@ -10,7 +10,8 @@ from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from src.gif_exporter import build_typing_gif
+from src.gif_exporter import build_typing_gif, build_typing_mp4
+from src.gradients import gradient_catalog
 from src.languages import LANGUAGE_CATALOG, LANGUAGE_EXTENSIONS, LANGUAGES
 from src.renderer import build_typing_html, export_project_json, make_render_options
 from src.samples import SAMPLES
@@ -85,6 +86,7 @@ async def code_typer(request: Request) -> HTMLResponse:
             "languages": LANGUAGES,
             "language_catalog": LANGUAGE_CATALOG,
             "themes": list(THEMES.keys()),
+            "gradients": gradient_catalog(),
             "fonts": FONTS,
             "aspect_ratios": ASPECT_RATIOS,
             "typing_modes": TYPING_MODES,
@@ -197,6 +199,22 @@ async def download_gif(request: Request) -> Response:
     )
 
 
+@app.post("/download/mp4")
+async def download_mp4(request: Request) -> Response:
+    values = await _payload_from_request(request)
+    options = _options_from_payload(values)
+    mp4_bytes = build_typing_mp4(
+        values.get("code", ""),
+        options,
+        frame_step=GIF_FRAME_STEP,
+    )
+    return Response(
+        mp4_bytes,
+        media_type="video/mp4",
+        headers={"Content-Disposition": 'attachment; filename="code-typing-animation.mp4"'},
+    )
+
+
 def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
     language = sample["language"]
     extension = LANGUAGE_EXTENSIONS.get(language, language)
@@ -216,6 +234,9 @@ def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
         "line_pause_ms": 160,
         "start_delay_ms": 350,
         "typing_mode": "character",
+        "background_style": "none",
+        "gradient_name": "sunset",
+        "canvas_padding": 64,
         "show_line_numbers": True,
         "show_diff_gutter": False,
         "show_window_chrome": True,
@@ -278,6 +299,9 @@ async def _payload_from_request(request: Request) -> dict[str, Any]:
         "line_pause_ms": _int(form.get("line_pause_ms"), 160, 0, 800),
         "start_delay_ms": _int(form.get("start_delay_ms"), 350, 0, 2500),
         "typing_mode": _typing_mode(form.get("typing_mode")),
+        "background_style": _background_style(form.get("background_style")),
+        "gradient_name": str(form.get("gradient_name", "sunset")),
+        "canvas_padding": _int(form.get("canvas_padding"), 64, 18, 180),
         "show_line_numbers": _bool(form.get("show_line_numbers")),
         "show_diff_gutter": False,
         "show_window_chrome": _bool(form.get("show_window_chrome")),
@@ -303,6 +327,9 @@ def _options_from_payload(values: dict[str, Any]):
         line_pause_ms=values["line_pause_ms"],
         start_delay_ms=values["start_delay_ms"],
         typing_mode=values["typing_mode"],
+        background_style=values["background_style"],
+        gradient_name=values["gradient_name"],
+        canvas_padding=values["canvas_padding"],
         show_line_numbers=values["show_line_numbers"],
         show_diff_gutter=values["show_diff_gutter"],
         show_window_chrome=values["show_window_chrome"],
@@ -327,6 +354,13 @@ def _typing_mode(value: Any) -> str:
     if mode in {item["value"] for item in TYPING_MODES}:
         return mode
     return "character"
+
+
+def _background_style(value: Any) -> str:
+    style = str(value or "none").strip().lower()
+    if style in {"none", "gradient"}:
+        return style
+    return "none"
 
 
 def _apply_aspect_ratio(aspect_ratio: str, width: int, height: int) -> tuple[int, int, str]:

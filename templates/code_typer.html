@@ -39,10 +39,16 @@
             <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/25" type="submit" formaction="/download/gif" formmethod="post">
               Export GIF
             </button>
+            <button class="h-9 rounded-lg border border-emerald-500/35 bg-emerald-600 px-5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-emerald-600/30 focus:outline-none focus:ring-4 focus:ring-emerald-500/25" type="submit" formaction="/download/mp4" formmethod="post">
+              Export MP4
+            </button>
             <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/25" type="submit" formaction="/download/project" formmethod="post">
               Export JSON
             </button>
           </nav>
+          <p class="mt-3 text-center text-xs leading-5 text-slate-500">
+            Use <span class="font-semibold text-slate-700">MP4</span> for long 16:9 or 9:16 exports. GIF remains available, but large animated GIFs are slower and heavier.
+          </p>
         </div>
       </section>
 
@@ -167,6 +173,28 @@
               </select>
             </label>
 
+            <label class="block">
+              <span class="mb-1 block text-xs font-bold text-[#333]">Canvas Background</span>
+              <select class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="background_style" name="background_style">
+                <option value="none" {% if values.background_style == "none" %}selected{% endif %}>Plain</option>
+                <option value="gradient" {% if values.background_style == "gradient" %}selected{% endif %}>Gradient</option>
+              </select>
+            </label>
+
+            <label class="block">
+              <span class="mb-1 block text-xs font-bold text-[#333]">Gradient Preset</span>
+              <select class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="gradient_name" name="gradient_name">
+                {% for gradient in gradients %}
+                  <option value="{{ gradient.value }}" {% if values.gradient_name == gradient.value %}selected{% endif %}>{{ gradient.label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+
+            <label class="block">
+              <span class="mb-1 block text-xs font-bold text-[#333]">Canvas Padding</span>
+              <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="canvas_padding" name="canvas_padding" type="number" min="18" max="180" step="2" value="{{ values.canvas_padding }}">
+            </label>
+
             <div class="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-4">
               <label class="inline-flex h-8 cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-2 text-sm text-slate-700">
                 <input class="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500" name="show_line_numbers" type="checkbox" {% if values.show_line_numbers %}checked{% endif %}>
@@ -185,6 +213,10 @@
                 Loop
               </label>
             </div>
+
+            <p class="text-xs leading-5 text-slate-500 sm:col-span-2 lg:col-span-4" id="canvas-help">
+              Gradient canvas works best for 16:9, 9:16, 1:1, and 4:5 exports. Display mode keeps the editor flush.
+            </p>
           </div>
         </details>
 

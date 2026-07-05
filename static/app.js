@@ -9,6 +9,11 @@ const code = document.getElementById("code");
 const language = document.getElementById("language");
 const title = document.getElementById("title");
 const theme = document.getElementById("theme_name");
+const aspectRatio = document.getElementById("aspect_ratio");
+const backgroundStyle = document.getElementById("background_style");
+const gradientName = document.getElementById("gradient_name");
+const canvasPadding = document.getElementById("canvas_padding");
+const canvasHelp = document.getElementById("canvas-help");
 const languageIcon = document.getElementById("language-icon");
 const languageValue = document.getElementById("language-value");
 const themeValue = document.getElementById("theme-value");
@@ -53,6 +58,25 @@ function updateHeroControls() {
   syncCustomSelect(theme);
   syncCustomSelect(sampleSelect);
   syncCodeEditorMode();
+  updateCanvasControls();
+}
+
+function updateCanvasControls() {
+  const isDisplay = aspectRatio?.value === "display";
+  const gradientEnabled = backgroundStyle?.value === "gradient";
+  if (gradientName) {
+    gradientName.disabled = !gradientEnabled || isDisplay;
+  }
+  if (canvasPadding) {
+    canvasPadding.disabled = !gradientEnabled || isDisplay;
+  }
+  if (canvasHelp) {
+    canvasHelp.textContent = isDisplay
+      ? "Display mode exports the editor flush at 700x300, so canvas gradients are ignored."
+      : gradientEnabled
+        ? "Gradient canvas adds a padded social-style backdrop behind the editor card."
+        : "Switch to Gradient to wrap the editor in a social-style export canvas.";
+  }
 }
 
 function codeEditorMode() {

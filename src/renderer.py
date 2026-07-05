@@ -13,6 +13,7 @@ from pygments.formatters import HtmlFormatter
 from pygments.lexers import TextLexer, get_lexer_by_name
 from pygments.util import ClassNotFound
 
+from .gradients import gradient_css
 from .languages import (
     ICON_BY_EXTENSION,
     ICON_BY_FILENAME,
@@ -48,6 +49,9 @@ class RenderOptions:
     loop: bool = False
     cursor: str = "bar"
     flush_frame: bool = False
+    background_style: str = "none"
+    gradient_name: str = "sunset"
+    canvas_padding: int = 64
 
 
 def make_render_options(**values: Any) -> RenderOptions:
@@ -58,6 +62,7 @@ def make_render_options(**values: Any) -> RenderOptions:
 
 def build_typing_html(code: str, options: RenderOptions, standalone: bool = False) -> str:
     theme = THEMES.get(options.theme_name, THEMES["VS Code Dark+"])
+    gradient_enabled = _gradient_enabled(options)
     code_lines = _highlighted_code_lines(
         code=code,
         language=options.language,
@@ -100,6 +105,13 @@ def build_typing_html(code: str, options: RenderOptions, standalone: bool = Fals
         "__WIDTH__": f"{_clamp(options.width, 420, 2200)}px",
         "__HEIGHT__": f"{_clamp(options.height, 260, 1400)}px",
         "__RADIUS__": f"{_clamp(options.radius, 0, 32)}px",
+        "__CANVAS_FILL__": gradient_css(options.gradient_name) if gradient_enabled else theme["page_bg"],
+        "__SHELL_PADDING__": f"{_canvas_padding(options)}px" if gradient_enabled else "0px",
+        "__CANVAS_RADIUS__": f"{_clamp(options.radius + 14, 14, 42)}px" if gradient_enabled else "0px",
+        "__PAGE_PADDING__": "20px" if gradient_enabled and standalone else "0px",
+        "__CARD_SHADOW__": "0 34px 90px rgba(15, 23, 42, 0.28)" if gradient_enabled else f"0 28px 80px {theme['shadow']}",
+        "__EMBEDDED_BORDER__": "1px solid var(--border)" if gradient_enabled else "0",
+        "__EMBEDDED_SHADOW__": "0 34px 90px rgba(15, 23, 42, 0.28)" if gradient_enabled else "none",
         "__CURSOR_CLASS__": f"cursor-{_cursor_class(options.cursor)}",
         "__CHROME_DISPLAY__": "flex" if options.show_window_chrome else "none",
         "__VIEWPORT_HEIGHT__": "calc(100% - 42px)" if options.show_window_chrome else "100%",
@@ -186,6 +198,16 @@ def _typing_mode(mode: str) -> str:
     if mode in {"word", "line"}:
         return mode
     return "character"
+
+
+def _gradient_enabled(options: RenderOptions) -> bool:
+    return str(options.background_style).lower() == "gradient" and not options.flush_frame
+
+
+def _canvas_padding(options: RenderOptions) -> int:
+    size_bound = min(_clamp(options.width, 420, 2200), _clamp(options.height, 260, 1400))
+    high = max(18, int(size_bound * 0.18))
+    return _clamp(options.canvas_padding, 18, high)
 
 
 def _file_icon_alt(title: str, language: str) -> str:
@@ -278,6 +300,7 @@ body {
   display: grid;
   place-items: center;
   background: var(--page-bg);
+  padding: __PAGE_PADDING__;
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -294,29 +317,31 @@ body.embedded {
 
 .stage-shell {
   width: min(100%, var(--stage-width));
-  padding: 18px;
+  height: var(--stage-height);
+  padding: __SHELL_PADDING__;
+  border-radius: __CANVAS_RADIUS__;
+  background: __CANVAS_FILL__;
 }
 
 body.embedded .stage-shell {
   width: 100%;
   height: 100%;
-  padding: 0;
 }
 
 .editor-window {
   width: 100%;
-  height: var(--stage-height);
+  height: 100%;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--editor-bg);
-  box-shadow: 0 28px 80px var(--shadow);
+  box-shadow: __CARD_SHADOW__;
 }
 
 body.embedded .editor-window {
   height: 100%;
-  border: 0;
-  box-shadow: none;
+  border: __EMBEDDED_BORDER__;
+  box-shadow: __EMBEDDED_SHADOW__;
 }
 
 body.flush-frame {
@@ -331,6 +356,8 @@ body.flush-frame .stage-shell {
   width: 100%;
   height: 100%;
   padding: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 body.flush-frame .editor-window {
