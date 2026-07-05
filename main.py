@@ -21,6 +21,7 @@ from src.terminal_renderer import (
     TerminalOptions,
     build_terminal_gif,
     build_terminal_html,
+    build_terminal_mp4,
 )
 from src.themes import THEMES
 
@@ -108,6 +109,8 @@ async def terminal(request: Request) -> HTMLResponse:
         "terminal.html",
         {
             "values": values,
+            "gradients": gradient_catalog(),
+            "aspect_ratios": ASPECT_RATIOS,
             "preview_html": build_terminal_html(_terminal_options(values)),
             "current_year": date.today().year,
         },
@@ -142,7 +145,18 @@ async def download_terminal_gif(request: Request) -> Response:
     return Response(
         gif_bytes,
         media_type="image/gif",
-        headers={"Content-Disposition": 'attachment; filename="terminal-animation-700x300.gif"'},
+        headers={"Content-Disposition": 'attachment; filename="terminal-animation.gif"'},
+    )
+
+
+@app.post("/terminal/download/mp4")
+async def download_terminal_mp4(request: Request) -> Response:
+    values = await _terminal_payload_from_request(request)
+    mp4_bytes = build_terminal_mp4(_terminal_options(values))
+    return Response(
+        mp4_bytes,
+        media_type="video/mp4",
+        headers={"Content-Disposition": 'attachment; filename="terminal-animation.mp4"'},
     )
 
 
@@ -249,18 +263,28 @@ def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
 
 def _default_terminal_payload() -> dict[str, Any]:
     return {
-        "title": "eminem — zsh",
+        "title": "eminem - zsh",
         "prompt": "eminem@macbook ~ %",
         "command": DEFAULT_TERMINAL_COMMAND,
         "output": DEFAULT_TERMINAL_OUTPUT,
         "word_speed_ms": 320,
         "output_delay_ms": 1000,
+        "aspect_ratio": "16_9",
+        "width": 1280,
+        "height": 720,
+        "background_style": "none",
+        "gradient_name": "sunset",
+        "canvas_padding": 52,
         "loop": True,
     }
 
 
 async def _terminal_payload_from_request(request: Request) -> dict[str, Any]:
     form = await request.form()
+    aspect_ratio = str(form.get("aspect_ratio", "display"))
+    width = _int(form.get("width"), 700, 520, 1600)
+    height = _int(form.get("height"), 300, 300, 1400)
+    width, height, aspect_ratio = _apply_aspect_ratio(aspect_ratio, width, height)
     return {
         "title": str(form.get("title", "Terminal"))[:80],
         "prompt": str(form.get("prompt", "%"))[:120],
@@ -268,6 +292,12 @@ async def _terminal_payload_from_request(request: Request) -> dict[str, Any]:
         "output": str(form.get("output", ""))[:6000],
         "word_speed_ms": _int(form.get("word_speed_ms"), 320, 80, 1200),
         "output_delay_ms": 1000,
+        "aspect_ratio": aspect_ratio,
+        "width": width,
+        "height": height,
+        "background_style": _background_style(form.get("background_style")),
+        "gradient_name": str(form.get("gradient_name", "sunset")),
+        "canvas_padding": _int(form.get("canvas_padding"), 52, 18, 180),
         "loop": _bool(form.get("loop")),
     }
 

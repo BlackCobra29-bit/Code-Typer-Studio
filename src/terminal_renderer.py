@@ -5,14 +5,22 @@ import html
 import json
 import re
 from dataclasses import dataclass
+from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
 
+import imageio.v2 as imageio
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+
+from .gradients import gradient_css, gradient_stops
 
 
 TERMINAL_WIDTH = 700
 TERMINAL_HEIGHT = 300
+VIDEO_FPS = 30
+MAX_TERMINAL_GIF_FRAMES = 72
+MAX_TERMINAL_VIDEO_FRAMES = 96
 DEFAULT_TERMINAL_COMMAND = "cargo run"
 DEFAULT_TERMINAL_OUTPUT = """error[E0506]: cannot assign to `balance` because it is borrowed
  --> src/main.rs:5:5
@@ -68,16 +76,23 @@ SEMANTIC_COLORS = {
 
 @dataclass(frozen=True)
 class TerminalOptions:
-    title: str = "eminem — zsh"
+    title: str = "eminem - zsh"
     prompt: str = "eminem@macbook ~ %"
     command: str = DEFAULT_TERMINAL_COMMAND
     output: str = DEFAULT_TERMINAL_OUTPUT
     word_speed_ms: int = 320
     output_delay_ms: int = 1000
     loop: bool = True
+    width: int = TERMINAL_WIDTH
+    height: int = TERMINAL_HEIGHT
+    aspect_ratio: str = "display"
+    background_style: str = "none"
+    gradient_name: str = "sunset"
+    canvas_padding: int = 52
 
 
 def build_terminal_html(options: TerminalOptions, standalone: bool = False) -> str:
+    gradient_enabled = _gradient_enabled(options)
     config = base64.b64encode(
         json.dumps(
             {
@@ -94,33 +109,30 @@ def build_terminal_html(options: TerminalOptions, standalone: bool = False) -> s
         "__TITLE__": html.escape(options.title or "Terminal"),
         "__PROMPT__": html.escape(options.prompt or "%"),
         "__CONFIG__": config,
+        "__STAGE_WIDTH__": f"{_clamp(options.width, 520, 1600)}px",
+        "__STAGE_HEIGHT__": f"{_clamp(options.height, 300, 1400)}px",
+        "__CANVAS_FILL__": gradient_css(options.gradient_name) if gradient_enabled else "#eef2f7",
+        "__CANVAS_PADDING__": f"{_canvas_padding(options)}px" if gradient_enabled else "0px",
+        "__CANVAS_RADIUS__": "0px",
+        "__PAGE_PADDING__": "20px" if gradient_enabled and standalone else "0px",
+        "__CARD_SHADOW__": "0 10px 24px rgba(15, 23, 42, 0.10)" if gradient_enabled else "0 24px 70px rgb(15 23 42 / 28%)",
+        "__EMBEDDED_SHADOW__": "0 10px 24px rgba(15, 23, 42, 0.10)" if gradient_enabled else "none",
+        "__EMBEDDED_BORDER__": "1px solid #3b3b3d" if gradient_enabled else "0",
     }
     for token, value in replacements.items():
         document = document.replace(token, value)
     if standalone:
+        if options.aspect_ratio == "display":
+            return document.replace("<body>", '<body class="flush-frame">')
         return document
-    return document.replace("<body>", '<body class="embedded">')
+    return (
+        document.replace('<html lang="en">', '<html lang="en" class="embedded-root">')
+        .replace("<body>", '<body class="embedded">')
+    )
 
 
 def build_terminal_gif(options: TerminalOptions) -> bytes:
-    font = _load_font(16)
-    title_font = _load_font(13)
-    words = re.findall(r"\S+\s*", options.command)
-    if not words and options.command:
-        words = [options.command]
-    visible_commands = [""]
-    for index in range(1, len(words) + 1):
-        visible_commands.append("".join(words[:index]))
-
-    frames = [
-        _draw_terminal_frame(options, visible_command, False, font, title_font)
-        for visible_command in visible_commands
-    ]
-    durations = [max(80, int(options.word_speed_ms))] * len(frames)
-    durations[-1] = max(20, int(options.output_delay_ms))
-    frames.append(_draw_terminal_frame(options, options.command, True, font, title_font))
-    durations.append(2000)
-
+    frames, durations = _terminal_frames(options, max_frames=MAX_TERMINAL_GIF_FRAMES)
     output = BytesIO()
     save_options = {
         "format": "GIF",
@@ -132,10 +144,19 @@ def build_terminal_gif(options: TerminalOptions) -> bytes:
     }
     if options.loop:
         save_options["loop"] = 0
-    frames[0].save(
-        output,
-        **save_options,
-    )
+    frames[0].save(output, **save_options)
+    return output.getvalue()
+
+
+def build_terminal_mp4(options: TerminalOptions, fps: int = VIDEO_FPS) -> bytes:
+    frames, durations = _terminal_frames(options, max_frames=MAX_TERMINAL_VIDEO_FRAMES)
+    output = BytesIO()
+    with imageio.get_writer(output, format="mp4", fps=fps, codec="libx264", quality=7, macro_block_size=1) as writer:
+        for frame, duration in zip(frames, durations):
+            repeats = max(1, round(duration / (1000 / fps)))
+            array = np.asarray(frame.convert("RGB"))
+            for _ in range(repeats):
+                writer.append_data(array)
     return output.getvalue()
 
 
@@ -145,7 +166,8 @@ def terminal_output_tokens(output: str) -> list[dict[str, str | bool]]:
         return _ansi_output_tokens(text)
 
     tokens: list[dict[str, str | bool]] = []
-    for line_index, line in enumerate(text.split("\n")):
+    lines = text.split("\n")
+    for line_index, line in enumerate(lines):
         position = 0
         for match in SEMANTIC_PATTERN.finditer(line):
             if match.start() > position:
@@ -160,9 +182,60 @@ def terminal_output_tokens(output: str) -> list[dict[str, str | bool]]:
             position = match.end()
         if position < len(line):
             _append_output_token(tokens, line[position:], OUTPUT_BASE_COLOR)
-        if line_index < len(text.split("\n")) - 1:
+        if line_index < len(lines) - 1:
             _append_output_token(tokens, "\n", OUTPUT_BASE_COLOR)
     return tokens
+
+
+def _terminal_frames(options: TerminalOptions, max_frames: int) -> tuple[list[Image.Image], list[int]]:
+    width = _clamp(options.width, 520, 1600)
+    height = _clamp(options.height, 300, 1400)
+    gradient_enabled = _gradient_enabled(options)
+    padding = _canvas_padding(options) if gradient_enabled else 0
+    terminal_width = max(420, width - (padding * 2))
+    terminal_height = max(220, height - (padding * 2))
+    font_size = _terminal_font_size(16, terminal_width)
+    title_font_size = max(11, _terminal_font_size(13, terminal_width))
+    font = _load_font(font_size)
+    title_font = _load_font(title_font_size)
+    words = re.findall(r"\S+\s*", options.command)
+    if not words and options.command:
+        words = [options.command]
+    visible_commands = [""]
+    for index in range(1, len(words) + 1):
+        visible_commands.append("".join(words[:index]))
+    visible_commands = _limit_sequence(visible_commands, max_frames - 1)
+
+    frames: list[Image.Image] = []
+    base_canvas = _terminal_canvas(width, height, options.gradient_name) if gradient_enabled else None
+    for visible_command in visible_commands:
+        terminal_frame = _draw_terminal_frame(
+            options,
+            visible_command,
+            False,
+            font,
+            title_font,
+            terminal_width,
+            terminal_height,
+            font_size,
+        )
+        frames.append(_compose_terminal_canvas(base_canvas, terminal_frame, width, height))
+
+    durations = [max(80, int(options.word_speed_ms))] * len(frames)
+    durations[-1] = max(20, int(options.output_delay_ms))
+    final_frame = _draw_terminal_frame(
+        options,
+        options.command,
+        True,
+        font,
+        title_font,
+        terminal_width,
+        terminal_height,
+        font_size,
+    )
+    frames.append(_compose_terminal_canvas(base_canvas, final_frame, width, height))
+    durations.append(2000)
+    return frames, durations
 
 
 def _ansi_output_tokens(text: str) -> list[dict[str, str | bool]]:
@@ -212,37 +285,38 @@ def _draw_terminal_frame(
     show_output: bool,
     font,
     title_font,
+    width: int,
+    height: int,
+    font_size: int,
 ) -> Image.Image:
-    image = Image.new("RGB", (TERMINAL_WIDTH, TERMINAL_HEIGHT), "#151515")
+    chrome_height = 42
+    radius = max(12, min(26, round(width * 0.018)))
+    image = Image.new("RGB", (width, height), "#151515")
     draw = ImageDraw.Draw(image)
-    draw.rounded_rectangle(
-        (0, 0, TERMINAL_WIDTH - 1, TERMINAL_HEIGHT - 1),
-        radius=13,
-        fill="#151515",
-        outline="#3b3b3d",
-    )
-    draw.rounded_rectangle((0, 0, TERMINAL_WIDTH - 1, 42), radius=13, fill="#303033")
-    draw.rectangle((0, 29, TERMINAL_WIDTH - 1, 42), fill="#303033")
-    draw.line((0, 42, TERMINAL_WIDTH, 42), fill="#111113")
+    draw.rounded_rectangle((0, 0, width - 1, height - 1), radius=radius, fill="#151515", outline="#3b3b3d")
+    draw.rounded_rectangle((0, 0, width - 1, chrome_height), radius=radius, fill="#303033")
+    draw.rectangle((0, chrome_height - radius, width - 1, chrome_height), fill="#303033")
+    draw.line((0, chrome_height, width, chrome_height), fill="#111113")
     for index, color in enumerate(("#ff5f57", "#febc2e", "#28c840")):
         x = 16 + index * 20
         draw.ellipse((x, 15, x + 12, 27), fill=color)
 
     title = options.title or "Terminal"
     title_width = draw.textlength(title, font=title_font)
-    draw.text(((TERMINAL_WIDTH - title_width) / 2, 13), title, font=title_font, fill="#d4d4d4")
+    draw.text(((width - title_width) / 2, 13), title, font=title_font, fill="#d4d4d4")
 
     x = 22
-    y = 65
+    y = chrome_height + 23
     prompt = options.prompt or "%"
     draw.text((x, y), prompt, font=font, fill="#75c7ff")
     command_x = x + draw.textlength(prompt + " ", font=font)
     draw.text((command_x, y), visible_command, font=font, fill="#f5f5f5")
     cursor_x = command_x + draw.textlength(visible_command, font=font)
-    draw.rectangle((cursor_x + 1, y + 2, cursor_x + 9, y + 19), fill="#e8e8e8")
+    cursor_height = max(16, font_size + 2)
+    draw.rectangle((cursor_x + 1, y + 2, cursor_x + 9, y + cursor_height), fill="#e8e8e8")
 
     if show_output:
-        output_y = y + 28
+        output_y = y + max(28, font_size + 12)
         output_x = x
         for token in terminal_output_tokens(options.output):
             parts = str(token["text"]).split("\n")
@@ -252,7 +326,7 @@ def _draw_terminal_frame(
                     output_x += draw.textlength(part, font=font)
                 if part_index < len(parts) - 1:
                     output_x = x
-                    output_y += 24
+                    output_y += max(24, font_size + 8)
     return image
 
 
@@ -274,6 +348,80 @@ def _clamp(value: int, low: int, high: int) -> int:
     return max(low, min(high, int(value)))
 
 
+def _terminal_font_size(base_size: int, frame_width: int) -> int:
+    scale = max(1.0, frame_width / TERMINAL_WIDTH)
+    return max(12, min(48, round(base_size * scale)))
+
+
+def _gradient_enabled(options: TerminalOptions) -> bool:
+    return str(options.background_style).lower() == "gradient" and str(options.aspect_ratio).lower() != "display"
+
+
+def _canvas_padding(options: TerminalOptions) -> int:
+    size_bound = min(_clamp(options.width, 520, 1600), _clamp(options.height, 300, 1400))
+    high = max(18, int(size_bound * 0.18))
+    return _clamp(options.canvas_padding, 18, high)
+
+
+def _limit_sequence(items: list[str], max_frames: int) -> list[str]:
+    if len(items) <= max_frames:
+        return items
+    limited: list[str] = []
+    for index in range(max_frames):
+        source_index = round(index * (len(items) - 1) / max(1, max_frames - 1))
+        value = items[source_index]
+        if not limited or limited[-1] != value:
+            limited.append(value)
+    if limited[-1] != items[-1]:
+        limited.append(items[-1])
+    return limited
+
+
+@lru_cache(maxsize=32)
+def _terminal_canvas(width: int, height: int, gradient_name: str) -> Image.Image:
+    colors = [_hex_to_rgb(color) for color in gradient_stops(gradient_name)]
+    image = Image.new("RGB", (width, height))
+    pixels = image.load()
+    denominator = max(1, width + height - 2)
+    for y in range(height):
+        for x in range(width):
+            position = (x + y) / denominator
+            pixels[x, y] = _sample_gradient(colors, position)
+    return image
+
+
+def _compose_terminal_canvas(canvas: Image.Image | None, terminal_frame: Image.Image, width: int, height: int) -> Image.Image:
+    if canvas is None:
+        return terminal_frame
+    background = canvas.copy()
+    left = (width - terminal_frame.width) // 2
+    top = (height - terminal_frame.height) // 2
+    background.paste(terminal_frame, (left, top))
+    return background
+
+
+def _sample_gradient(colors: list[tuple[int, int, int]], position: float) -> tuple[int, int, int]:
+    if len(colors) == 1:
+        return colors[0]
+    bounded = max(0.0, min(1.0, position))
+    scaled = bounded * (len(colors) - 1)
+    index = min(len(colors) - 2, int(scaled))
+    local = scaled - index
+    start = colors[index]
+    end = colors[index + 1]
+    return tuple(
+        int(start[channel] + ((end[channel] - start[channel]) * local))
+        for channel in range(3)
+    )
+
+
+def _hex_to_rgb(value: str) -> tuple[int, int, int]:
+    clean = value.strip().lstrip("#")
+    if len(clean) != 6:
+        return (0, 0, 0)
+    return tuple(int(clean[index : index + 2], 16) for index in (0, 2, 4))
+
+
 TERMINAL_HTML = """<!doctype html>
 <html lang="en">
 <head>
@@ -283,24 +431,71 @@ TERMINAL_HTML = """<!doctype html>
 <style>
 * { box-sizing: border-box; }
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+.embedded-root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
 body {
   display: grid;
   place-items: center;
+  padding: __PAGE_PADDING__;
   background: #eef2f7;
   color: #f5f5f5;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
-body.embedded { background: transparent; }
+body.embedded {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  min-height: 0;
+  background: transparent;
+  padding: 0;
+  overflow: hidden;
+}
+.stage-shell {
+  width: min(100%, __STAGE_WIDTH__);
+  height: __STAGE_HEIGHT__;
+  padding: __CANVAS_PADDING__;
+  border-radius: __CANVAS_RADIUS__;
+  background: __CANVAS_FILL__;
+}
+body.embedded .stage-shell {
+  width: 100%;
+  height: 100%;
+}
 .terminal {
-  width: 700px;
-  height: 300px;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   border: 1px solid #3b3b3d;
   border-radius: 13px;
   background: #151515;
-  box-shadow: 0 24px 70px rgb(15 23 42 / 28%);
+  box-shadow: __CARD_SHADOW__;
 }
-body.embedded .terminal { width: 100%; height: 100%; box-shadow: none; }
+body.embedded .terminal {
+  width: 100%;
+  height: 100%;
+  box-shadow: __EMBEDDED_SHADOW__;
+  border: __EMBEDDED_BORDER__;
+}
+body.flush-frame {
+  width: __STAGE_WIDTH__;
+  height: __STAGE_HEIGHT__;
+  min-height: __STAGE_HEIGHT__;
+  background: transparent;
+}
+body.flush-frame .stage-shell {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+body.flush-frame .terminal {
+  box-shadow: none;
+  border: 0;
+}
 .titlebar {
   position: relative;
   display: flex;
@@ -361,6 +556,7 @@ body.embedded .terminal { width: 100%; height: 100%; box-shadow: none; }
 </style>
 </head>
 <body>
+<div class="stage-shell">
 <main class="terminal" aria-label="Animated macOS terminal">
   <header class="titlebar">
     <span class="lights" aria-hidden="true"><span class="light red"></span><span class="light yellow"></span><span class="light green"></span></span>
@@ -371,6 +567,7 @@ body.embedded .terminal { width: 100%; height: 100%; box-shadow: none; }
     <pre class="output" id="output" aria-live="polite"></pre>
   </section>
 </main>
+</div>
 <script>
 (() => {
   const configBytes = Uint8Array.from(atob("__CONFIG__"), (char) => char.charCodeAt(0));
@@ -419,19 +616,20 @@ body.embedded .terminal { width: 100%; height: 100%; box-shadow: none; }
   }
 
   function restart() {
-    window.clearTimeout(timer);
     index = 0;
-    command.textContent = "";
     output.textContent = "";
-    schedule(typeNextWord, 350);
+    command.textContent = "";
+    screen.scrollTop = 0;
+    screen.scrollLeft = 0;
+    schedule(typeNextWord, 160);
   }
 
   window.addEventListener("message", (event) => {
     if (event.data === "terminal:restart") restart();
   });
+
   restart();
 })();
 </script>
 </body>
-</html>
-"""
+</html>"""

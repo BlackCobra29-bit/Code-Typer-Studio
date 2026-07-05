@@ -5,25 +5,31 @@
 <form id="terminal-form" class="min-h-full bg-slate-50" method="post">
   <button id="terminal-preview-trigger" class="hidden" type="button" hx-post="/terminal/preview" hx-include="#terminal-form" hx-target="#terminal-preview" hx-swap="innerHTML" hx-trigger="refreshPreview"></button>
 
-  <div class="mx-auto w-full max-w-[1180px] px-4 py-12 sm:px-6 sm:py-16">
-      <section class="text-center" aria-labelledby="terminal-title">
+  <div class="mx-auto flex w-full max-w-[1265px] flex-col items-center px-4 pb-24 sm:pb-28">
+      <section class="w-full max-w-[900px] py-12 text-center sm:py-16" aria-labelledby="terminal-title">
         <p class="text-sm font-bold uppercase tracking-[0.22em] text-blue-600">Terminal Studio</p>
         <h1 id="terminal-title" class="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Create a macOS terminal animation</h1>
-        <p class="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">Your command appears word by word, pauses for exactly one second, then shows the complete output at once.</p>
+        <p class="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">Type commands word by word, reveal output, and export clean terminal content for display, widescreen, and vertical social formats.</p>
       </section>
 
-      <section class="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,700px)_1fr]" aria-label="Terminal animation studio">
-        <div class="min-w-0">
+      <section class="mt-10 flex w-full scroll-mt-24 justify-center" id="preview" aria-label="Terminal animation preview">
+        <div class="w-full max-w-[700px]">
           <div id="terminal-preview" class="mx-auto h-[300px] w-full max-w-[700px] overflow-hidden rounded-[13px] bg-[#151515] shadow-2xl shadow-slate-900/20 ring-1 ring-slate-950/20">
             {% include "_terminal_preview.html" %}
           </div>
           <div class="mt-5 flex flex-wrap items-center justify-center gap-3">
             <button id="restart-terminal" class="h-10 rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400" type="button">Restart</button>
-            <button class="h-10 rounded-xl bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700" type="submit" formaction="/terminal/download/gif" formmethod="post">Export GIF · 700×300</button>
-            <button class="h-10 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800" type="submit" formaction="/terminal/download/html" formmethod="post">Export HTML</button>
+            <button class="h-10 rounded-xl bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700" type="submit" formaction="/terminal/download/html" formmethod="post">Export HTML</button>
+            <button class="h-10 rounded-xl bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700" type="submit" formaction="/terminal/download/gif" formmethod="post">Export GIF</button>
+            <button class="h-10 rounded-xl bg-emerald-600 px-5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:-translate-y-0.5 hover:bg-emerald-700" type="submit" formaction="/terminal/download/mp4" formmethod="post">Export MP4</button>
           </div>
+          <p class="mt-3 text-center text-xs leading-5 text-slate-500">
+            Use <span class="font-semibold text-slate-700">MP4</span> for long 16:9 or 9:16 terminal exports. GIF remains available, but large animated GIFs are slower and heavier.
+          </p>
         </div>
+      </section>
 
+      <section class="mt-12 flex w-full max-w-[843px] flex-col gap-3" aria-label="Terminal controls">
         <aside class="rounded-2xl bg-white p-5 shadow-xl shadow-slate-200/70 ring-1 ring-slate-200 sm:p-6" aria-label="Terminal settings">
           <h2 class="text-lg font-black">Terminal content</h2>
           <p class="mt-1 text-sm leading-6 text-slate-500">Edit any field to refresh the preview.</p>
@@ -48,6 +54,33 @@
               <span class="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500"><span>Word speed</span><output id="speed-value">{{ values.word_speed_ms }} ms</output></span>
               <input class="w-full accent-blue-600" id="word-speed" name="word_speed_ms" type="range" min="80" max="1200" step="20" value="{{ values.word_speed_ms }}">
             </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Frame Size</span>
+              <select class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" id="terminal-aspect-ratio" name="aspect_ratio">
+                {% for ratio in aspect_ratios %}
+                  <option value="{{ ratio.value }}" {% if values.aspect_ratio == ratio.value %}selected{% endif %}>{{ ratio.label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Canvas Background</span>
+              <select class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" id="terminal-background-style" name="background_style">
+                <option value="none" {% if values.background_style == "none" %}selected{% endif %}>Plain</option>
+                <option value="gradient" {% if values.background_style == "gradient" %}selected{% endif %}>Gradient</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Gradient Preset</span>
+              <select class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" id="terminal-gradient-name" name="gradient_name">
+                {% for gradient in gradients %}
+                  <option value="{{ gradient.value }}" {% if values.gradient_name == gradient.value %}selected{% endif %}>{{ gradient.label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Canvas Padding</span>
+              <input class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" id="terminal-canvas-padding" name="canvas_padding" type="number" min="18" max="180" step="2" value="{{ values.canvas_padding }}">
+            </label>
             <div class="flex items-center justify-between rounded-xl bg-blue-50 px-3 py-2.5 text-sm">
               <span class="font-semibold text-blue-950">Output delay</span>
               <span class="rounded-full bg-white px-2.5 py-1 font-bold text-blue-700 shadow-sm">1 second</span>
@@ -57,6 +90,9 @@
               <input class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" name="loop" type="checkbox" {% if values.loop %}checked{% endif %}>
               Loop animation
             </label>
+            <p class="text-xs leading-5 text-slate-500" id="terminal-canvas-help">
+              Gradient canvas works best for 16:9, 9:16, 1:1, and 4:5 exports. Display mode keeps the terminal flush.
+            </p>
           </div>
         </aside>
       </section>
