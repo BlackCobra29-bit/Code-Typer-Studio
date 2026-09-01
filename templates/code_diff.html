@@ -20,34 +20,50 @@
           <output id="diff-preview-time">0.0 / 0.0s</output>
         </div>
         <div class="preview-caption"><span id="diff-syntax-engine">TextMate · automatic line diff</span><strong id="diff-preview-status" role="status">Ready</strong></div>
-        <nav class="mt-6 flex flex-wrap justify-center gap-2" aria-label="Code diff actions">
-          <button class="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-600" type="button" id="diff-replay-action">Replay</button>
-          <button class="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-600" type="submit" formaction="/code-diff/download/html">Export HTML</button>
-          <button class="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-600" type="submit" formaction="/code-diff/download/gif">Export GIF</button>
-          <button class="h-9 rounded-lg border border-emerald-700 bg-emerald-700 px-4 text-xs font-semibold text-white" type="submit" formaction="/code-diff/download/mp4">Export MP4</button>
-          <button class="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-600" type="submit" formaction="/code-diff/download/project">Export JSON</button>
+        <nav class="mt-6 flex flex-wrap justify-center gap-4" aria-label="Code diff actions">
+          <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white" type="button" id="diff-replay-action">Replay</button>
+          <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white" type="submit" formaction="/code-diff/download/html">Export HTML</button>
+          <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white" type="submit" formaction="/code-diff/download/gif">Export GIF</button>
+          <button class="h-9 rounded-lg border border-emerald-500/35 bg-emerald-600 px-5 text-sm font-bold text-white" type="submit" formaction="/code-diff/download/mp4">Export MP4</button>
+          <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white" type="submit" formaction="/code-diff/download/project">Export JSON</button>
         </nav>
       </div>
     </section>
 
     <section class="mt-12 flex w-full max-w-[1000px] flex-col gap-3" aria-label="Code diff controls">
-      <div class="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-3">
-        <label class="block"><span class="mb-1.5 block text-xs font-semibold text-slate-600">Language</span><select id="diff-language" name="language" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm">
-          {% for language in languages %}<option value="{{ language }}" {% if values.language == language %}selected{% endif %}>{{ language_catalog[language].label }}</option>{% endfor %}
-        </select></label>
-        <label class="block"><span class="mb-1.5 block text-xs font-semibold text-slate-600">Editor theme</span><select id="diff-theme" name="theme_name" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm">
-          {% for theme in themes %}<option value="{{ theme }}" {% if values.theme_name == theme %}selected{% endif %}>{{ theme }}</option>{% endfor %}
-        </select></label>
-        <label class="block"><span class="mb-1.5 block text-xs font-semibold text-slate-600">File name</span><input id="diff-title" name="title" value="{{ values.title }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-3 text-sm"></label>
+      <div class="grid rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100 sm:grid-cols-3 sm:gap-2">
+        <div class="relative block py-1" data-diff-custom-select="diff-language">
+          <span class="mb-1 block text-xs font-bold text-[#333]">Language</span>
+          <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-diff-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="diff-language-menu">
+            <span class="grid h-5 w-5 shrink-0 place-items-center" data-diff-select-icon><img class="h-5 w-5 object-contain" src="{{ url_for('static', path='icons/' ~ language_catalog[values.language].icon) }}" alt=""></span>
+            <span class="truncate" data-diff-select-value>{{ language_catalog[values.language].label }}</span>
+          </button>
+          <select class="sr-only" id="diff-language" name="language" tabindex="-1" aria-hidden="true">
+            {% for language in languages %}<option value="{{ language }}" {% if values.language == language %}selected{% endif %}>{{ language_catalog[language].label }}</option>{% endfor %}
+          </select>
+          <div class="absolute left-0 top-full z-50 mt-2 hidden max-h-72 min-w-full w-max max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200" id="diff-language-menu" data-diff-select-menu role="listbox"></div>
+        </div>
+        <div class="relative block py-1" data-diff-custom-select="diff-theme">
+          <span class="mb-1 block text-xs font-bold text-[#333]">Theme</span>
+          <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-diff-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="diff-theme-menu">
+            <span class="grid h-5 w-5 shrink-0 place-items-center" data-diff-select-icon><span class="grid h-5 w-5 place-items-center rounded bg-slate-900 text-[9px] font-bold text-white" aria-hidden="true">fn</span></span>
+            <span class="truncate" data-diff-select-value>{{ values.theme_name }}</span>
+          </button>
+          <select class="sr-only" id="diff-theme" name="theme_name" tabindex="-1" aria-hidden="true">
+            {% for theme in themes %}<option value="{{ theme }}" {% if values.theme_name == theme %}selected{% endif %}>{{ theme }}</option>{% endfor %}
+          </select>
+          <div class="absolute left-0 top-full z-50 mt-2 hidden max-h-72 min-w-full w-max max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200" id="diff-theme-menu" data-diff-select-menu role="listbox"></div>
+        </div>
+        <label class="block py-1"><span class="mb-1 block text-xs font-bold text-[#333]">File Name</span><input id="diff-title" name="title" value="{{ values.title }}" class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30"></label>
       </div>
 
       <div class="grid gap-3 lg:grid-cols-2">
-        <section class="diff-source-card rounded-xl border border-slate-200 bg-white p-4 shadow-sm" aria-label="Original source editor">
-          <div class="mb-3 flex items-center justify-between"><div><p class="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Original</p><p class="mt-1 text-xs text-slate-400">The file before the edit</p></div><span class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-500">BEFORE</span></div>
+        <section class="diff-source-card rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100" aria-label="Original source editor">
+          <div class="mb-2 flex items-center justify-between gap-2"><div><p class="text-xs font-bold text-[#333]">Original Code</p><p class="mt-1 text-xs font-normal text-slate-500">Theme colors from the original TextMate rules</p></div><span class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-500">BEFORE</span></div>
           <textarea id="original_code" name="original_code" spellcheck="false">{{ values.original_code }}</textarea>
         </section>
-        <section class="diff-source-card rounded-xl border border-emerald-200 bg-white p-4 shadow-sm" aria-label="Updated source editor">
-          <div class="mb-3 flex items-center justify-between"><div><p class="text-xs font-bold uppercase tracking-[.16em] text-emerald-600">Updated</p><p class="mt-1 text-xs text-slate-400">The accepted version</p></div><span class="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">AFTER</span></div>
+        <section class="diff-source-card rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100" aria-label="Updated source editor">
+          <div class="mb-2 flex items-center justify-between gap-2"><div><p class="text-xs font-bold text-[#333]">Updated Code</p><p class="mt-1 text-xs font-normal text-slate-500">Theme colors from the original TextMate rules</p></div><span class="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">AFTER</span></div>
           <textarea id="revised_code" name="revised_code" spellcheck="false">{{ values.revised_code }}</textarea>
         </section>
       </div>
@@ -76,5 +92,6 @@
     </section>
   </div>
   <style id="diff-token-styles"></style>
+  <script id="diff-language-catalog" type="application/json">{{ language_catalog | tojson }}</script>
 </form>
 {% endblock %}

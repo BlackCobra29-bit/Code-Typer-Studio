@@ -26,10 +26,10 @@
 .studio-transport output { font: 10px 'JetBrains Mono', monospace; color: #7c8596; white-space: nowrap; }
 .preview-caption { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 12px 2px 0; font: 10px system-ui, sans-serif; color: #798291; }
 #preview-status { font-weight: 500; max-width: 65%; text-align: right; }
-#studio-form nav[aria-label='Primary actions'] { margin-top: 20px; gap: 8px; }
-#studio-form nav[aria-label='Primary actions'] button { box-shadow: none; transform: none; border: 1px solid #d9dee7; color: #526072; background: white; font-size: 11px; font-weight: 500; padding: 0 14px; border-radius: 7px; }
-#studio-form nav[aria-label='Primary actions'] button[formaction='/download/mp4'] { background: #202a3a; color: white; border-color: #202a3a; }
-#studio-form nav[aria-label='Primary actions'] button:hover { filter: brightness(.94); }
+#studio-form nav[aria-label='Primary actions'], #diff-form nav[aria-label='Code diff actions'] { margin-top: 20px; gap: 8px; }
+#studio-form nav[aria-label='Primary actions'] button, #diff-form nav[aria-label='Code diff actions'] button { box-shadow: none; transform: none; border: 1px solid #d9dee7; color: #526072; background: white; font-size: 11px; font-weight: 500; padding: 0 14px; border-radius: 7px; transition: filter 140ms ease, border-color 140ms ease, color 140ms ease; }
+#studio-form nav[aria-label='Primary actions'] button[formaction='/download/mp4'], #diff-form nav[aria-label='Code diff actions'] button[formaction='/code-diff/download/mp4'] { background: #202a3a; color: white; border-color: #202a3a; }
+#studio-form nav[aria-label='Primary actions'] button:hover, #diff-form nav[aria-label='Code diff actions'] button:hover { filter: brightness(.94); }
 #studio-form button:disabled { opacity: .5; cursor: wait; }
 #studio-form section[aria-label='Studio controls'] { margin-top: 26px; max-width: 920px; gap: 14px; }
 #studio-form section[aria-label='Studio controls'] > div, #studio-form #editor, #studio-form details { padding: 16px; border: 1px solid #e3e6ec; border-radius: 12px; box-shadow: 0 2px 5px #1a243003; --tw-ring-shadow: 0 0 transparent; }
@@ -51,13 +51,21 @@
 #diff-form { background:#f7f8fa; color:#202633; }
 #diff-form > div { max-width:1180px; }
 #diff-form .studio-preview-wrap { max-width:920px; }
-#diff-form .diff-source-card .CodeMirror { height:310px; border-radius:9px; background:var(--source-bg,#1e1e1e); color:var(--source-fg,#d4d4d4); font:12px/1.7 'JetBrains Mono',Consolas,monospace; }
+#diff-form section[aria-label='Code diff controls'] { margin-top:26px; max-width:920px; gap:14px; }
+#diff-form section[aria-label='Code diff controls'] > div:first-child, #diff-form .diff-source-card, #diff-form details { border:1px solid #e3e6ec; border-radius:12px; box-shadow:0 2px 5px #1a243003; --tw-ring-shadow:0 0 transparent; }
+#diff-form section[aria-label='Code diff controls'] label > span, #diff-form [data-diff-custom-select] > span { font-size:10px; font-weight:500; color:#647084; margin-bottom:7px; }
+#diff-form input:not([type='range']):not([type='checkbox']), #diff-form select, #diff-form [data-diff-select-trigger] { background:#f2f4f7; border:1px solid transparent; height:35px; font-size:12px; border-radius:6px; }
+#diff-form .diff-source-card { padding:14px; }
+#diff-form .diff-source-card .CodeMirror { height:260px; border-radius:8px; background:var(--source-bg,#1e1e1e); color:var(--source-fg,#d4d4d4); font:13px/1.75 'JetBrains Mono',Consolas,monospace; transition:background-color 160ms ease,color 160ms ease; }
 #diff-form .diff-source-card .CodeMirror-lines { padding:14px 0; }
 #diff-form .diff-source-card .CodeMirror-gutters { border:0; background:var(--source-bg,#1e1e1e); }
-#diff-form .diff-source-card .CodeMirror-linenumber { color:var(--source-muted,#858585); padding:0 10px; font-size:10px; }
-#diff-form .diff-source-card .CodeMirror-cursor { border-color:var(--source-fg,#d4d4d4); }
+#diff-form .diff-source-card .CodeMirror-linenumber { color:var(--source-muted,#858585); padding:0 12px; font-size:11px; }
+#diff-form .diff-source-card .CodeMirror-cursor { border-color:var(--source-cursor,var(--source-fg,#d4d4d4)); }
+#diff-form .diff-source-card .CodeMirror-selected { background:var(--source-selection,#8094b044); }
+#diff-form .diff-source-card .CodeMirror-focused { outline:2px solid color-mix(in srgb,var(--source-cursor,var(--source-fg,#d4d4d4)) 30%,transparent); outline-offset:0; }
+#diff-form details summary { color:#485569; font-weight:500; }
 #diff-form button:disabled { opacity:.5; cursor:wait; }
-#diff-form input:focus-visible,#diff-form select:focus-visible,#diff-form button:focus-visible { outline:2px solid #10b981; outline-offset:2px; }
+#diff-form input:focus-visible,#diff-form select:focus-visible,#diff-form button:focus-visible { outline:2px solid #64748b; outline-offset:3px; }
 @media (prefers-reduced-motion:reduce){#diff-form *,#diff-form *::before,#diff-form *::after{transition:none!important;animation:none!important}}
 
 .CodeMirror-focused {
