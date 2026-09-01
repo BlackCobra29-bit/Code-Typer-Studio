@@ -88,6 +88,7 @@ document.addEventListener("keydown", (event) => {
 const pageTitles = {
   "/": "Code Typer Studio",
   "/code-typer": "Code Typer — Code Typer Studio",
+  "/code-diff": "Code Diff — Code Typer Studio",
   "/terminal": "Terminal Simulator — Code Typer Studio",
 };
 
@@ -138,6 +139,7 @@ document.body.addEventListener("htmx:beforeRequest", (event) => {
 document.body.addEventListener("htmx:beforeSwap", (event) => {
   if (event.detail.target?.id !== "page-content" || event.detail.shouldSwap === false) return;
   window.cleanupCodeStudio?.();
+  window.cleanupCodeDiffStudio?.();
   window.cleanupTerminalStudio?.();
 });
 
@@ -169,6 +171,7 @@ document.body.addEventListener("htmx:historyRestore", () => {
   updatePageTitle();
   updateActiveNavigation();
   window.initCodeStudio?.();
+  window.initCodeDiffStudio?.();
   window.initTerminalStudio?.();
 });
 

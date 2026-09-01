@@ -11,6 +11,8 @@ from src.renderer import RenderOptions, build_typing_html
 from src.syntax_style import THEME_NAMES, highlight_code, detect_language, normalize_code
 from src.typing_timeline import build_timeline
 from src.gif_exporter import FrameRenderer, build_typing_gif
+from src.diff_renderer import DiffOptions, build_diff_html, build_diff_model
+from src.diff_exporter import DiffFrameRenderer
 
 
 class GlyphReader(HTMLParser):
@@ -108,6 +110,37 @@ class AnimationTests(unittest.TestCase):
         gif = Image.open(BytesIO(data))
         self.assertNotIn('loop', gif.info)
         self.assertGreater(gif.n_frames, 1)
+
+
+class CodeDiffTests(unittest.TestCase):
+    def test_diff_model_places_replacements_and_insertions_at_source_location(self):
+        original = 'total = 1\nprint(total)'
+        revised = 'total = 2\nprint(total)\n# complete'
+        options = DiffOptions(language='python',theme_name='VS Code Dark+')
+        model = build_diff_model(original,revised,options)
+        changed = [(row['kind'],row['oldNumber'],row['newNumber']) for row in model['rows'] if row['kind'] != 'equal']
+        self.assertEqual(changed,[('delete',1,None),('insert',None,1),('insert',None,3)])
+        self.assertEqual(model['additions'],2)
+        self.assertEqual(model['deletions'],1)
+        self.assertGreater(model['timeline']['resolveStart'],model['timeline']['insertEnd'])
+        only_insertions = build_diff_model('', 'first\nsecond', options)
+        self.assertEqual([row['kind'] for row in only_insertions['rows']], ['insert','insert'])
+
+    def test_diff_html_is_seekable_and_keeps_real_theme_tokens(self):
+        output = build_diff_html('value = 1','value = "new"',DiffOptions(autoplay=False))
+        self.assertIn('window.codeDiff=Object.freeze',output)
+        self.assertIn('row-delete',output)
+        self.assertIn('row-insert',output)
+        self.assertIn('#ce9178',output.lower())
+        self.assertNotIn('__ROWS__',output)
+
+    def test_diff_frame_renderer_covers_change_and_resolved_states(self):
+        options = DiffOptions(width=700,height=400,font_size=17,canvas_padding=48,background_style='gradient')
+        renderer = DiffFrameRenderer('x = 1\nprint(x)','x = 2\nprint(x)',options)
+        changing = renderer.frame(renderer.timeline['insertEnd'])
+        resolved = renderer.frame(renderer.timeline['duration'])
+        self.assertEqual(changing.size,(700,400))
+        self.assertNotEqual(changing.tobytes(),resolved.tobytes())
 
 
 if __name__ == '__main__': unittest.main()

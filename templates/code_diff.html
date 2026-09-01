@@ -1,0 +1,80 @@
+{% extends "_base.html" %}
+{% block title %}Code Diff — Code Typer Studio{% endblock %}
+{% block content %}
+<form id="diff-form" class="min-h-full bg-slate-50" method="post">
+  <button id="diff-preview-trigger" class="hidden" type="button" hx-post="/code-diff/preview" hx-include="#diff-form" hx-target="#diff-preview-panel" hx-swap="innerHTML" hx-trigger="refreshPreview" hx-sync="this:replace"></button>
+  <div class="mx-auto flex w-full max-w-[1265px] flex-col items-center px-4 pb-24 sm:pb-28">
+    <section class="w-full max-w-[900px] py-12 text-center sm:py-16" aria-labelledby="code-diff-title">
+      <p class="text-sm font-bold uppercase tracking-[0.22em] text-emerald-600">Code Diff</p>
+      <h1 id="code-diff-title" class="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">Show the change, beautifully.</h1>
+      <p class="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">Turn an original file and its revision into a clear, cinematic edit sequence with precise insertions, removals, and syntax-aware color.</p>
+    </section>
+
+    <section class="flex w-full scroll-mt-24 justify-center" aria-label="Code diff animation preview">
+      <div class="studio-preview-wrap w-full">
+        <div class="relative overflow-hidden"><div id="diff-preview-panel" class="min-w-0 overflow-hidden">{% include "_diff_preview.html" %}</div></div>
+        <div class="studio-transport">
+          <button type="button" id="diff-preview-play" aria-label="Pause animation">Pause</button>
+          <button type="button" id="diff-preview-restart" aria-label="Restart animation">↺</button>
+          <input id="diff-preview-scrubber" type="range" min="0" max="1000" value="0" aria-label="Animation timeline">
+          <output id="diff-preview-time">0.0 / 0.0s</output>
+        </div>
+        <div class="preview-caption"><span id="diff-syntax-engine">TextMate · automatic line diff</span><strong id="diff-preview-status" role="status">Ready</strong></div>
+        <nav class="mt-6 flex flex-wrap justify-center gap-2" aria-label="Code diff actions">
+          <button class="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-600" type="button" id="diff-replay-action">Replay</button>
+          <button class="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-600" type="submit" formaction="/code-diff/download/html">Export HTML</button>
+          <button class="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-600" type="submit" formaction="/code-diff/download/gif">Export GIF</button>
+          <button class="h-9 rounded-lg border border-emerald-700 bg-emerald-700 px-4 text-xs font-semibold text-white" type="submit" formaction="/code-diff/download/mp4">Export MP4</button>
+          <button class="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-600" type="submit" formaction="/code-diff/download/project">Export JSON</button>
+        </nav>
+      </div>
+    </section>
+
+    <section class="mt-12 flex w-full max-w-[1000px] flex-col gap-3" aria-label="Code diff controls">
+      <div class="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-3">
+        <label class="block"><span class="mb-1.5 block text-xs font-semibold text-slate-600">Language</span><select id="diff-language" name="language" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm">
+          {% for language in languages %}<option value="{{ language }}" {% if values.language == language %}selected{% endif %}>{{ language_catalog[language].label }}</option>{% endfor %}
+        </select></label>
+        <label class="block"><span class="mb-1.5 block text-xs font-semibold text-slate-600">Editor theme</span><select id="diff-theme" name="theme_name" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm">
+          {% for theme in themes %}<option value="{{ theme }}" {% if values.theme_name == theme %}selected{% endif %}>{{ theme }}</option>{% endfor %}
+        </select></label>
+        <label class="block"><span class="mb-1.5 block text-xs font-semibold text-slate-600">File name</span><input id="diff-title" name="title" value="{{ values.title }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-3 text-sm"></label>
+      </div>
+
+      <div class="grid gap-3 lg:grid-cols-2">
+        <section class="diff-source-card rounded-xl border border-slate-200 bg-white p-4 shadow-sm" aria-label="Original source editor">
+          <div class="mb-3 flex items-center justify-between"><div><p class="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Original</p><p class="mt-1 text-xs text-slate-400">The file before the edit</p></div><span class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-500">BEFORE</span></div>
+          <textarea id="original_code" name="original_code" spellcheck="false">{{ values.original_code }}</textarea>
+        </section>
+        <section class="diff-source-card rounded-xl border border-emerald-200 bg-white p-4 shadow-sm" aria-label="Updated source editor">
+          <div class="mb-3 flex items-center justify-between"><div><p class="text-xs font-bold uppercase tracking-[.16em] text-emerald-600">Updated</p><p class="mt-1 text-xs text-slate-400">The accepted version</p></div><span class="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">AFTER</span></div>
+          <textarea id="revised_code" name="revised_code" spellcheck="false">{{ values.revised_code }}</textarea>
+        </section>
+      </div>
+
+      <details class="group rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <summary class="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-slate-700 [&::-webkit-details-marker]:hidden">Animation and frame settings<span class="text-slate-400 transition group-open:rotate-180">⌄</span></summary>
+        <div class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 lg:grid-cols-4">
+          <label><span class="mb-1 block text-xs text-slate-500">Font family</span><select name="font_family" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm">{% for font in fonts %}<option value="{{ font }}" {% if values.font_family == font %}selected{% endif %}>{{ font.split(',')[0] }}</option>{% endfor %}</select></label>
+          <label><span class="mb-1 block text-xs text-slate-500">Font size</span><input name="font_size" type="number" min="12" max="32" value="{{ values.font_size }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"></label>
+          <label><span class="mb-1 block text-xs text-slate-500">Line height</span><input name="line_height" type="number" min="1.1" max="2.2" step=".05" value="{{ values.line_height }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"></label>
+          <label><span class="mb-1 block text-xs text-slate-500">Change transition</span><input name="transition_ms" type="number" min="240" max="1400" step="20" value="{{ values.transition_ms }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"></label>
+          <label><span class="mb-1 block text-xs text-slate-500">Change hold</span><input name="hold_ms" type="number" min="200" max="2400" step="20" value="{{ values.hold_ms }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"></label>
+          <label><span class="mb-1 block text-xs text-slate-500">Opening delay</span><input name="start_delay_ms" type="number" min="100" max="2500" step="20" value="{{ values.start_delay_ms }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"></label>
+          <label><span class="mb-1 block text-xs text-slate-500">Frame size</span><select id="diff-aspect-ratio" name="aspect_ratio" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm">{% for ratio in aspect_ratios %}<option value="{{ ratio.value }}" {% if values.aspect_ratio == ratio.value %}selected{% endif %}>{{ ratio.label }}</option>{% endfor %}</select></label>
+          <label><span class="mb-1 block text-xs text-slate-500">Canvas</span><select name="background_style" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"><option value="none" {% if values.background_style == 'none' %}selected{% endif %}>Plain</option><option value="gradient" {% if values.background_style == 'gradient' %}selected{% endif %}>Gradient</option></select></label>
+          <label><span class="mb-1 block text-xs text-slate-500">Gradient</span><select name="gradient_name" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm">{% for gradient in gradients %}<option value="{{ gradient.value }}" {% if values.gradient_name == gradient.value %}selected{% endif %}>{{ gradient.label }}</option>{% endfor %}</select></label>
+          <label><span class="mb-1 block text-xs text-slate-500">Canvas padding</span><input name="canvas_padding" type="number" min="18" max="180" step="2" value="{{ values.canvas_padding }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"></label>
+          <div class="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-4">
+            {% for name,label in [('show_line_numbers','Line numbers'),('show_window_chrome','Window bar'),('autoplay','Autoplay'),('loop','Loop')] %}
+            <label class="inline-flex h-9 items-center gap-2 rounded-md bg-slate-100 px-3 text-xs text-slate-600"><input name="{{ name }}" type="checkbox" {% if values[name] %}checked{% endif %}>{{ label }}</label>
+            {% endfor %}
+          </div>
+        </div>
+      </details>
+      <input type="hidden" name="radius" value="{{ values.radius }}">
+    </section>
+  </div>
+  <style id="diff-token-styles"></style>
+</form>
+{% endblock %}

@@ -110,6 +110,7 @@ def build_typing_html(code: str, options: RenderOptions, standalone: bool = Fals
         "__RADIUS__": f"{_clamp(options.radius, 0, 32)}px",
         "__CANVAS_FILL__": gradient_css(options.gradient_name) if gradient_enabled else theme["page_bg"],
         "__SHELL_PADDING__": f"{_canvas_padding(options)}px" if gradient_enabled else "0px",
+        "__STAGE_CLASS__": "gradient-frame" if gradient_enabled else "plain-frame",
         "__CURSOR_CLASS__": f"cursor-{_cursor_class(options.cursor)}",
         "__CHROME_DISPLAY__": "flex" if options.show_window_chrome else "none",
     }

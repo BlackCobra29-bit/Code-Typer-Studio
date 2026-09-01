@@ -57,4 +57,4 @@ def build_timeline(highlight: dict, options) -> dict:
         previous = event["count"]
     end = events[-1]["at"] if events else time
     return {"chars": chars, "events": events, "typingEnd": end,
-            "duration": max(650, end + 1500), "fadeMs": 85}
+            "duration": max(650, end + 1500), "fadeMs": 150, "cursorEaseMs": 70}

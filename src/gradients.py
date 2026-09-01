@@ -62,7 +62,7 @@ GRADIENT_PRESETS = [
         "value": "midnight",
         "label": "Midnight",
         "angle": 135,
-        "colors": ["#232526", "#414345"],
+        "colors": ["#071321", "#080d16", "#07140f"],
     },
     {
         "value": "lagoon",

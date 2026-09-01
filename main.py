@@ -12,6 +12,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from src.gif_exporter import build_typing_gif, build_typing_mp4, ExportLimitError
+from src.diff_exporter import build_diff_gif, build_diff_mp4
+from src.diff_renderer import build_diff_html, export_diff_project, make_diff_options
 from src.gradients import gradient_catalog
 from src.languages import LANGUAGE_CATALOG, LANGUAGE_EXTENSIONS, LANGUAGES
 from src.renderer import build_typing_html, export_project_json, make_render_options
@@ -58,6 +60,23 @@ TYPING_MODES = [
 DEFAULT_SAMPLE = "Python API"
 DEFAULT_ASPECT_RATIO = "16_9"
 GIF_FRAME_STEP = 3
+
+DEFAULT_DIFF_ORIGINAL = '''from django.shortcuts import render
+from .models import Post
+
+
+def post_list(request):
+    posts = Post.objects.all()
+
+    for post in posts:
+        print(post.author.name)
+
+    return render(
+        request, "blog/post_list.html", {"posts": posts},
+    )'''
+DEFAULT_DIFF_REVISED = DEFAULT_DIFF_ORIGINAL.replace(
+    "posts = Post.objects.all()", 'posts = Post.objects.select_related("author")'
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -132,6 +151,67 @@ async def terminal(request: Request) -> HTMLResponse:
             "current_year": date.today().year,
         },
     )
+
+
+@app.get("/code-diff", response_class=HTMLResponse)
+async def code_diff(request: Request) -> HTMLResponse:
+    values = _default_diff_payload()
+    preview_html = await run_in_threadpool(
+        build_diff_html, values["original_code"], values["revised_code"], _diff_options_from_payload(values)
+    )
+    return templates.TemplateResponse(request, "code_diff.html", {
+        "values": values, "languages": LANGUAGES, "language_catalog": LANGUAGE_CATALOG,
+        "themes": list(THEME_NAMES), "fonts": FONTS, "gradients": gradient_catalog(),
+        "aspect_ratios": ASPECT_RATIOS, "preview_html": preview_html,
+        "current_year": date.today().year,
+    })
+
+
+@app.post("/code-diff/preview", response_class=HTMLResponse)
+async def code_diff_preview(request: Request) -> HTMLResponse:
+    values = await _diff_payload_from_request(request)
+    preview_html = await run_in_threadpool(
+        build_diff_html, values["original_code"], values["revised_code"], _diff_options_from_payload(values)
+    )
+    return templates.TemplateResponse(request, "_diff_preview.html", {"preview_html": preview_html})
+
+
+@app.post("/code-diff/download/html")
+async def download_diff_html(request: Request) -> Response:
+    values = await _diff_payload_from_request(request)
+    document = await run_in_threadpool(
+        build_diff_html, values["original_code"], values["revised_code"], _diff_options_from_payload(values), True
+    )
+    return Response(document, media_type="text/html",
+                    headers={"Content-Disposition": 'attachment; filename="code-diff-animation.html"'})
+
+
+@app.post("/code-diff/download/project")
+async def download_diff_project(request: Request) -> Response:
+    values = await _diff_payload_from_request(request)
+    document = export_diff_project(values["original_code"], values["revised_code"], _diff_options_from_payload(values))
+    return Response(document, media_type="application/json",
+                    headers={"Content-Disposition": 'attachment; filename="code-diff-project.json"'})
+
+
+@app.post("/code-diff/download/gif")
+async def download_diff_gif(request: Request) -> Response:
+    values = await _diff_payload_from_request(request)
+    data = await run_in_threadpool(
+        build_diff_gif, values["original_code"], values["revised_code"], _diff_options_from_payload(values)
+    )
+    return Response(data, media_type="image/gif",
+                    headers={"Content-Disposition": 'attachment; filename="code-diff-animation.gif"'})
+
+
+@app.post("/code-diff/download/mp4")
+async def download_diff_mp4(request: Request) -> Response:
+    values = await _diff_payload_from_request(request)
+    data = await run_in_threadpool(
+        build_diff_mp4, values["original_code"], values["revised_code"], _diff_options_from_payload(values)
+    )
+    return Response(data, media_type="video/mp4",
+                    headers={"Content-Disposition": 'attachment; filename="code-diff-animation.mp4"'})
 
 
 @app.post("/terminal/preview", response_class=HTMLResponse)
@@ -255,19 +335,19 @@ def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
         "code": sample["code"],
         "theme_name": "VS Code Dark+",
         "font_family": FONTS[0],
-        "font_size": 26,
-        "line_height": 1.65,
+        "font_size": 22,
+        "line_height": 1.6,
         "aspect_ratio": DEFAULT_ASPECT_RATIO,
         "width": 1280,
         "height": 720,
-        "radius": 12,
+        "radius": 14,
         "speed_ms": 24,
         "line_pause_ms": 160,
         "start_delay_ms": 550,
         "typing_mode": "character",
         "background_style": "gradient",
         "gradient_name": "midnight",
-        "canvas_padding": 64,
+        "canvas_padding": 92,
         "show_line_numbers": True,
         "show_diff_gutter": False,
         "show_window_chrome": True,
@@ -294,6 +374,54 @@ def _default_terminal_payload() -> dict[str, Any]:
         "canvas_padding": 52,
         "loop": True,
     }
+
+
+def _default_diff_payload() -> dict[str, Any]:
+    return {
+        "title": "views.py", "language": "python", "theme_name": "VS Code Dark+",
+        "original_code": DEFAULT_DIFF_ORIGINAL, "revised_code": DEFAULT_DIFF_REVISED,
+        "font_family": FONTS[0], "font_size": 20, "line_height": 1.55,
+        "aspect_ratio": "16_9", "width": 1280, "height": 720, "radius": 14,
+        "transition_ms": 650, "hold_ms": 1050, "start_delay_ms": 550,
+        "background_style": "gradient", "gradient_name": "midnight", "canvas_padding": 92,
+        "show_line_numbers": True, "show_window_chrome": True, "autoplay": True,
+        "loop": False,
+    }
+
+
+async def _diff_payload_from_request(request: Request) -> dict[str, Any]:
+    form = await request.form()
+    original = normalize_code(str(form.get("original_code", "")))
+    revised = normalize_code(str(form.get("revised_code", "")))
+    for source in (original, revised):
+        if len(source) > 20000 or source.count("\n") > 1000 or any(len(line) > 2000 for line in source.split("\n")):
+            raise HTTPException(422, "Use up to 20,000 characters, 1,000 lines, and 2,000 characters per line in each version.")
+    aspect_ratio = str(form.get("aspect_ratio", DEFAULT_ASPECT_RATIO))
+    width, height, aspect_ratio = _apply_aspect_ratio(
+        aspect_ratio, _int(form.get("width"),1280,520,1600), _int(form.get("height"),720,320,1400)
+    )
+    return {
+        "title": str(form.get("title","changes.py"))[:120], "language": str(form.get("language","python")),
+        "theme_name": str(form.get("theme_name","VS Code Dark+")), "original_code": original,
+        "revised_code": revised, "font_family": str(form.get("font_family")) if form.get("font_family") in FONTS else FONTS[0],
+        "font_size": _int(form.get("font_size"),20,12,32), "line_height": _float(form.get("line_height"),1.55,1.1,2.2),
+        "aspect_ratio": aspect_ratio, "width": width, "height": height, "radius": _int(form.get("radius"),14,0,28),
+        "transition_ms": _int(form.get("transition_ms"),650,240,1400), "hold_ms": _int(form.get("hold_ms"),1050,200,2400),
+        "start_delay_ms": _int(form.get("start_delay_ms"),550,100,2500), "background_style": _background_style(form.get("background_style")),
+        "gradient_name": str(form.get("gradient_name","midnight")), "canvas_padding": _int(form.get("canvas_padding"),92,18,180),
+        "show_line_numbers": _bool(form.get("show_line_numbers")), "show_window_chrome": _bool(form.get("show_window_chrome")),
+        "autoplay": _bool(form.get("autoplay")), "loop": _bool(form.get("loop")),
+    }
+
+
+def _diff_options_from_payload(values: dict[str, Any]):
+    return make_diff_options(
+        **{key: values[key] for key in (
+            "title","language","theme_name","font_family","font_size","line_height","width","height","radius",
+            "transition_ms","hold_ms","start_delay_ms","background_style","gradient_name","canvas_padding",
+            "show_line_numbers","show_window_chrome","autoplay","loop"
+        )}, flush_frame=values["aspect_ratio"] == "display"
+    )
 
 
 async def _terminal_payload_from_request(request: Request) -> dict[str, Any]:

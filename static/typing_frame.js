@@ -16,7 +16,8 @@
   let fontSize = options.fontSize || 26;
   let lastCount = -1, lastLine = -1, lastReported = -1;
   const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
-  const ease = t => 1 - Math.pow(1 - clamp(t), 3);
+  const ease = t => 1 - Math.pow(1 - clamp(t), 4);
+  const smoothstep = t => { t = clamp(t); return t*t*t*(t*(t*6-15)+10); };
   function upperBound(items, time) {
     let lo = 0, hi = items.length;
     while (lo < hi) { const mid = (lo + hi) >>> 1; if (items[mid].at <= time) lo = mid + 1; else hi = mid; }
@@ -67,7 +68,7 @@
   function scrollAt(time) {
     const key = scrollKeys[upperBound(scrollKeys, time)-1];
     if (!key) return { x: 0, y: 0 };
-    const t = reducedMotion ? 1 : ease((time-key.at)/220);
+    const t = reducedMotion ? 1 : smoothstep((time-key.at)/260);
     return { x: key.fromX + (key.x-key.fromX)*t, y: key.fromY + (key.y-key.fromY)*t };
   }
   function draw(time) {
@@ -77,9 +78,11 @@
     const count = event?.count || 0;
     for (const glyph of glyphs) {
       const char = timeline.chars[Number(glyph.dataset.index)];
-      const opacity = elapsed < char.at ? 0 : reducedMotion ? 1 : clamp((elapsed-char.at)/timeline.fadeMs);
-      const value = String(opacity);
-      if (glyph.style.opacity !== value) glyph.style.opacity = value;
+      const progress = elapsed < char.at ? 0 : reducedMotion ? 1 : ease((elapsed-char.at)/timeline.fadeMs);
+      const opacity = progress.toFixed(4);
+      const transform = `translate3d(0,${((1-progress)*3.5).toFixed(3)}px,0) scale(${(.985+progress*.015).toFixed(4)})`;
+      if (glyph.style.opacity !== opacity) glyph.style.opacity = opacity;
+      if (glyph.style.transform !== transform) glyph.style.transform = transform;
     }
     const p = positions[count] || positions[0];
     if (p) {
@@ -88,19 +91,24 @@
       }
       const before = positions[eventIndex > 0 ? timeline.events[eventIndex-1].count : 0] || p;
       const age = elapsed - (event?.at || 0);
-      // Never sweep diagonally across a line break.
-      const t = !reducedMotion && before.line === p.line ? ease(age / 45) : 1;
+      const next = timeline.events[eventIndex+1];
+      const available = event && next ? Math.max(16, next.at-event.at) : (timeline.cursorEaseMs || 70);
+      const travel = Math.min(timeline.cursorEaseMs || 70, available);
+      // Finish each move before the following key so rapid typing stays continuous.
+      const t = !reducedMotion && before.line === p.line ? smoothstep(age / travel) : 1;
       const x = before.x + (p.x-before.x)*t;
       const y = p.y + (editor.classList.contains('cursor-underline') ? fontSize : 0);
       cursor.style.transform = `translate3d(${x}px,${y}px,0)`;
       const blink = age < 350 || Math.floor((age-350)/500)%2 === 0;
-      cursor.style.opacity = elapsed >= timeline.typingEnd + 1100 ? '0' : blink ? (options.cursor === 'block' ? '.55' : '1') : '0';
+      const lineReveal = !reducedMotion && before.line !== p.line ? ease(age/90) : 1;
+      const cursorOpacity = options.cursor === 'block' ? .55 : 1;
+      cursor.style.opacity = elapsed >= timeline.typingEnd + 1100 || !blink ? '0' : String(cursorOpacity*lineReveal);
     }
     const scroll = scrollAt(elapsed);
     viewport.scrollLeft = scroll.x; viewport.scrollTop = scroll.y;
-    const entrance = reducedMotion ? 1 : ease(elapsed / Math.max(1, Math.min(550, options.startDelayMs || 1)));
-    editor.style.transform = `translateY(${(1-entrance)*10}px)`;
-    editor.style.opacity = String(.88 + entrance*.12);
+    const entrance = reducedMotion ? 1 : smoothstep(elapsed / Math.max(1, Math.min(650, options.startDelayMs || 1)));
+    editor.style.transform = `translate3d(0,${(1-entrance)*14}px,0) scale(${.992+entrance*.008})`;
+    editor.style.opacity = String(.76 + entrance*.24);
     scrubber.value = String(elapsed/timeline.duration*1000);
     document.getElementById('timecode').textContent = `${(elapsed/1000).toFixed(1)} / ${(timeline.duration/1000).toFixed(1)}s`;
     root.dataset.visibleCount = count; root.dataset.time = elapsed.toFixed(1);
