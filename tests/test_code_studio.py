@@ -54,8 +54,8 @@ class HighlightingTests(unittest.TestCase):
                 self.assertEqual(highlight_code('x = 1', 'python', name)['theme'], theme_id)
 
     def test_auto_detection_and_explicit_override(self):
-        self.assertEqual(detect_language('const n = 1;', 'auto', 'snippet.ts'), 'typescript')
-        self.assertEqual(detect_language('const n = 1;', 'python', 'snippet.ts'), 'python')
+        self.assertEqual(detect_language('interface User { id: number }', 'auto'), 'typescript')
+        self.assertEqual(detect_language('const n = 1;', 'python'), 'python')
         self.assertEqual(detect_language('def greet(name):\n    return name\n', 'auto'), 'python')
         self.assertEqual(detect_language('', 'auto'), 'text')
         self.assertEqual(highlight_code('hello', 'unknown', 'VS Code Dark+')['language'], 'text')
@@ -85,13 +85,15 @@ class AnimationTests(unittest.TestCase):
 
     def test_html_escapes_source_without_replacing_user_markers(self):
         source = '</script><script>alert(1)</script> & __TITLE__ 🦋\n\n'
-        output = build_typing_html(source, RenderOptions(title='example.txt', language='text', autoplay=False))
+        output = build_typing_html(source, RenderOptions(language='text', autoplay=False))
         self.assertNotIn('</script><script>alert(1)', output)
         payload = json.loads(re.search(r'id="typingOptions">(.*?)</script>', output, re.S)[1])
         self.assertEqual(''.join(c['text'] for c in payload['timeline']['chars']), source)
         parser = GlyphReader(); parser.feed(output)
         self.assertEqual(parser.text, source.replace('\n',''))
         self.assertIn('data:font/ttf;base64,', output)
+        self.assertIn('<title>Code Typing Animation</title>', output)
+        self.assertNotIn('file-title', output)
 
     def test_frame_reveal_scroll_and_theme_match(self):
         source = '\n'.join(f'const n{i} = "test";' for i in range(16))
@@ -133,6 +135,8 @@ class CodeDiffTests(unittest.TestCase):
         self.assertIn('row-insert',output)
         self.assertIn('#ce9178',output.lower())
         self.assertNotIn('__ROWS__',output)
+        self.assertIn('<title>Code Diff Animation</title>',output)
+        self.assertNotIn('file-title',output)
 
     def test_diff_frame_renderer_covers_change_and_resolved_states(self):
         options = DiffOptions(width=700,height=400,font_size=17,canvas_padding=48,background_style='gradient')

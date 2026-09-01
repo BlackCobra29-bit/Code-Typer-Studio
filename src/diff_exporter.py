@@ -35,7 +35,6 @@ class DiffFrameRenderer:
         self.content_x = 72 if o.show_line_numbers else 30
         self.fonts = [_font(o.font_family,o.font_size,flag) for flag in range(4)]
         self.number_font = _font(o.font_family,o.font_size*.78)
-        self.small = _font("JetBrains Mono",11)
         self.badge_font = _font("JetBrains Mono",8)
         self.strips = [self._line_strip(row["tokens"]) for row in self.rows]
         self.first_changed = next((i for i,row in enumerate(self.rows) if row["kind"] != "equal"),0)
@@ -122,7 +121,6 @@ class DiffFrameRenderer:
             chrome=_rgb(self.theme["chrome_bg"],self.bg);top=_blend(chrome,self.fg,.10)
             for cy in range(self.chrome):draw.line((0,cy,self.ew,cy),fill=_blend(top,chrome,cy/max(1,self.chrome-1)))
             for i,color in enumerate(("#ff5f57","#febc2e","#28c840")):draw.ellipse((20+i*17,18,29+i*17,27),fill=color,outline=(25,25,25))
-            draw.text((82,self.chrome/2),o.title[:48],font=self.small,fill=_blend(self.bg,self.fg,.66),anchor="lm")
             label="ORIGINAL" if time<t["changeStart"] else "CHANGES DETECTED" if time<t["resolveEnd"] else "UPDATED"
             badge_w=self.badge_font.getlength(label)+16;bx=self.ew-badge_w-14
             draw.rounded_rectangle((bx,14,self.ew-14,30),radius=8,fill=_blend(chrome,self.fg,.04),outline=_blend(chrome,self.fg,.12))

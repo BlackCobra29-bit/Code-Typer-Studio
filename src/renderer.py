@@ -11,21 +11,13 @@ from typing import Any
 import re
 
 from .gradients import gradient_css
-from .languages import (
-    ICON_BY_EXTENSION,
-    ICON_BY_FILENAME,
-    ICON_BY_LANGUAGE,
-)
 from .syntax_style import highlight_code, editor_theme
 from .typing_timeline import build_timeline
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
-ICON_DIR = BASE_DIR / "static" / "icons"
-
 @dataclass(frozen=True)
 class RenderOptions:
-    title: str = "code-typer-studio"
     language: str = "python"
     theme_name: str = "VS Code Dark+"
     font_family: str = "JetBrains Mono, Consolas, monospace"
@@ -57,7 +49,7 @@ def make_render_options(**values: Any) -> RenderOptions:
 
 
 def build_typing_html(code: str, options: RenderOptions, standalone: bool = False) -> str:
-    highlighted = highlight_code(code, options.language, options.theme_name, options.title)
+    highlighted = highlight_code(code, options.language, options.theme_name)
     theme = editor_theme(highlighted)
     timeline = build_timeline(highlighted, options)
     gradient_enabled = _gradient_enabled(options)
@@ -81,9 +73,6 @@ def build_typing_html(code: str, options: RenderOptions, standalone: bool = Fals
 
     document = (BASE_DIR / "src" / "typing_frame.html").read_text(encoding="utf-8")
     replacements = {
-        "__TITLE__": html.escape(options.title or "code-typer-studio"),
-        "__FILE_ICON_SRC__": html.escape(_file_icon_src(options.title, options.language), quote=True),
-        "__FILE_ICON_ALT__": html.escape(_file_icon_alt(options.title, options.language), quote=True),
         "__CODE_LINES__": code_lines,
         "__FONT_CSS__": _embedded_font_css(),
         "__FRAME_CSS__": (BASE_DIR / "static" / "typing_frame.css").read_text(encoding="utf-8"),
@@ -187,43 +176,6 @@ def _canvas_padding(options: RenderOptions) -> int:
     size_bound = min(_clamp(options.width, 420, 2200), _clamp(options.height, 260, 1400))
     high = max(18, int(size_bound * 0.18))
     return _clamp(options.canvas_padding, 18, high)
-
-
-def _file_icon_alt(title: str, language: str) -> str:
-    filename = Path(title or "").name
-    if filename.lower() in ICON_BY_FILENAME:
-        return f"{filename} file icon"
-
-    extension = Path(title or "").suffix.lower().lstrip(".")
-    if extension:
-        return f"{extension} file icon"
-    return f"{(language or 'code').strip()} file icon"
-
-
-def _file_icon_src(title: str, language: str) -> str:
-    icon_name = _file_icon_name(title, language)
-    return _svg_data_uri(icon_name)
-
-
-def _file_icon_name(title: str, language: str) -> str:
-    filename = Path(title or "").name.lower()
-    if filename in ICON_BY_FILENAME:
-        return ICON_BY_FILENAME[filename]
-
-    extension = Path(title or "").suffix.lower()
-    if extension in ICON_BY_EXTENSION:
-        return ICON_BY_EXTENSION[extension]
-
-    return ICON_BY_LANGUAGE.get((language or "").strip().lower(), "json.svg")
-
-
-@lru_cache(maxsize=None)
-def _svg_data_uri(icon_name: str) -> str:
-    icon_path = ICON_DIR / icon_name
-    if not icon_path.is_file():
-        icon_path = ICON_DIR / "json.svg"
-    encoded = base64.b64encode(icon_path.read_bytes()).decode("ascii")
-    return f"data:image/svg+xml;base64,{encoded}"
 
 
 def _clamp(value: int, low: int, high: int) -> int:

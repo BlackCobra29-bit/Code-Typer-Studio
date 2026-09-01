@@ -68,15 +68,10 @@ def normalize_code(code: str) -> str:
     return code.replace("\r\n", "\n").replace("\r", "\n")
 
 
-def detect_language(code: str, language: str = "auto", filename: str = "") -> str:
+def detect_language(code: str, language: str = "auto") -> str:
     selected = (language or "auto").strip().lower()
     if selected != "auto":
         return selected
-    name = Path(filename).name.lower()
-    extension = Path(name).suffix.lstrip(".")
-    for key, config in LANGUAGE_CATALOG.items():
-        if extension in config.get("extensions", []) or name in config.get("filenames", []):
-            return key
     # Pygments' corpus guesses can favor niche languages for short snippets.
     # These signatures only choose a grammar; they never assign token colors.
     signatures = [
@@ -109,9 +104,9 @@ def detect_language(code: str, language: str = "auto", filename: str = "") -> st
     return "text"
 
 
-def highlight_code(code: str, language: str, theme_name: str, filename: str = "") -> dict:
+def highlight_code(code: str, language: str, theme_name: str) -> dict:
     code = normalize_code(code)
-    resolved = detect_language(code, language, filename)
+    resolved = detect_language(code, language)
     theme = THEME_NAMES.get(LEGACY_THEMES.get(theme_name, theme_name), "dark-plus")
     return _highlight(code, resolved, theme)
 

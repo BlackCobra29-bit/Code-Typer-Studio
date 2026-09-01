@@ -9,7 +9,7 @@ from pathlib import Path
 import re
 
 from .gradients import gradient_css
-from .renderer import _embedded_font_css, _file_icon_alt, _file_icon_src
+from .renderer import _embedded_font_css
 from .syntax_style import editor_theme, highlight_code, normalize_code
 
 
@@ -18,7 +18,6 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 
 @dataclass(frozen=True)
 class DiffOptions:
-    title: str = "changes.py"
     language: str = "python"
     theme_name: str = "VS Code Dark+"
     font_family: str = "JetBrains Mono, Consolas, monospace"
@@ -48,8 +47,8 @@ def make_diff_options(**values) -> DiffOptions:
 def build_diff_model(original: str, revised: str, options: DiffOptions) -> dict:
     original = normalize_code(original)
     revised = normalize_code(revised)
-    before = highlight_code(original, options.language, options.theme_name, options.title)
-    after = highlight_code(revised, options.language, options.theme_name, options.title)
+    before = highlight_code(original, options.language, options.theme_name)
+    after = highlight_code(revised, options.language, options.theme_name)
     before_text = [] if original == "" else ["".join(token["content"] for token in line) for line in before["lines"]]
     after_text = [] if revised == "" else ["".join(token["content"] for token in line) for line in after["lines"]]
     matcher = SequenceMatcher(None, before_text, after_text, autojunk=False)
@@ -123,9 +122,6 @@ def build_diff_html(original: str, revised: str, options: DiffOptions, standalon
     }).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     document = (BASE_DIR / "src" / "diff_frame.html").read_text(encoding="utf-8")
     replacements = {
-        "__TITLE__": html.escape(options.title or "changes.py"),
-        "__FILE_ICON_SRC__": html.escape(_file_icon_src(options.title, options.language), quote=True),
-        "__FILE_ICON_ALT__": html.escape(_file_icon_alt(options.title, options.language), quote=True),
         "__ROWS__": rows,
         "__PAYLOAD__": payload,
         "__FONT_CSS__": _embedded_font_css(),

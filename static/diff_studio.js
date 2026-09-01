@@ -101,7 +101,27 @@ function initCodeDiffStudio(){
   editors.forEach(editor=>editor.on('change',()=>{syncAreas();schedule(650)}));
   form.addEventListener('htmx:afterSwap',event=>{if(event.detail.target.id==='diff-preview-panel')status.textContent='Ready'},{signal});
   form.addEventListener('htmx:responseError',event=>{status.textContent=event.detail.xhr?.responseText||'Preview could not be rendered'},{signal});
-  form.addEventListener('submit',async event=>{const button=event.submitter;if(!button?.formAction.includes('/code-diff/download/'))return;event.preventDefault();syncAreas();const label=button.textContent,buttons=[...form.querySelectorAll('button[type="submit"]')];buttons.forEach(item=>item.disabled=true);button.textContent='Rendering…';status.textContent='Rendering export…';try{const response=await fetch(button.formAction,{method:'POST',body:new FormData(form),signal});if(!response.ok)throw new Error(await response.text());const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1]||'code-diff-animation';link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);status.textContent='Export ready'}catch(error){if(error.name!=='AbortError')status.textContent=error.message||'Export failed'}finally{buttons.forEach(item=>item.disabled=false);button.textContent=label}},{signal});
+  const exportButtons=[...form.querySelectorAll('[data-diff-export]')];
+  async function downloadExport(button){
+    if(button.disabled)return;
+    syncAreas();
+    const label=button.textContent;
+    exportButtons.forEach(item=>item.disabled=true);
+    button.textContent='Rendering…';status.textContent='Rendering export…';
+    try{
+      const response=await fetch(button.formAction,{method:button.formMethod||'POST',body:new FormData(form)});
+      if(!response.ok)throw new Error((await response.text()).trim()||`Export failed (${response.status})`);
+      const blob=await response.blob();
+      if(!blob.size)throw new Error('The exported file was empty.');
+      const url=URL.createObjectURL(blob),link=document.createElement('a');
+      link.href=url;link.download=response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1]||'code-diff-animation';link.hidden=true;
+      document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),30000);status.textContent='Export ready';
+    }catch(error){status.textContent=error.message||'Export failed'}
+    finally{exportButtons.forEach(item=>item.disabled=false);button.textContent=label}
+  }
+  exportButtons.forEach(button=>button.addEventListener('click',event=>{event.preventDefault();downloadExport(button)},{signal}));
+  form.addEventListener('submit',event=>{if(event.submitter?.matches('[data-diff-export]'))event.preventDefault()},{signal});
   window.cleanupCodeDiffStudio=()=>{abort.abort();clearTimeout(timer);clearTimeout(highlightTimer);editors.forEach(editor=>editor.toTextArea());form.dataset.initialized='false'};
   fit();scheduleHighlight();
 }

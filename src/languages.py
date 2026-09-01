@@ -369,7 +369,6 @@ LANGUAGE_CATALOG = {
         "icon": "dockerfile.svg",
         "extension": "dockerfile",
         "extensions": ["dockerfile"],
-        "filenames": ["dockerfile"],
         "lexer": "docker",
         "codemirror_mode": "dockerfile",
     },
@@ -378,7 +377,6 @@ LANGUAGE_CATALOG = {
         "icon": "makefile.svg",
         "extension": "mk",
         "extensions": ["mk", "mak"],
-        "filenames": ["makefile"],
         "lexer": "make",
         "codemirror_mode": "cmake",
     },
@@ -409,29 +407,3 @@ LANGUAGE_CATALOG = {
 }
 
 LANGUAGES = list(LANGUAGE_CATALOG)
-LANGUAGE_LABELS = {
-    language: config["label"] for language, config in LANGUAGE_CATALOG.items()
-}
-LANGUAGE_ICONS = {
-    language: config["icon"] for language, config in LANGUAGE_CATALOG.items()
-}
-LANGUAGE_EXTENSIONS = {
-    language: config["extension"] for language, config in LANGUAGE_CATALOG.items()
-}
-LANGUAGE_LEXERS = {
-    language: config.get("lexer", language) for language, config in LANGUAGE_CATALOG.items()
-}
-
-ICON_BY_LANGUAGE = LANGUAGE_ICONS.copy()
-ICON_BY_EXTENSION: dict[str, str] = {}
-ICON_BY_FILENAME: dict[str, str] = {}
-
-for language, config in LANGUAGE_CATALOG.items():
-    icon = config["icon"]
-    for extension in config.get("extensions", []):
-        ICON_BY_EXTENSION.setdefault(f".{extension.lower().lstrip('.')}", icon)
-    for filename in config.get("filenames", []):
-        ICON_BY_FILENAME.setdefault(filename.lower(), icon)
-
-ICON_BY_EXTENSION[".rs"] = "rust-white.svg"
-ICON_BY_EXTENSION[".bash"] = "bash-white.svg"

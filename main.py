@@ -15,7 +15,7 @@ from src.gif_exporter import build_typing_gif, build_typing_mp4, ExportLimitErro
 from src.diff_exporter import build_diff_gif, build_diff_mp4
 from src.diff_renderer import build_diff_html, export_diff_project, make_diff_options
 from src.gradients import gradient_catalog
-from src.languages import LANGUAGE_CATALOG, LANGUAGE_EXTENSIONS, LANGUAGES
+from src.languages import LANGUAGE_CATALOG, LANGUAGES
 from src.renderer import build_typing_html, export_project_json, make_render_options
 from src.samples import SAMPLES
 from src.terminal_renderer import (
@@ -99,7 +99,7 @@ async def highlighting_unavailable(request: Request, exc: HighlightingUnavailabl
 @app.post("/highlight")
 async def highlight_source(request: Request):
     values = await _payload_from_request(request)
-    return await run_in_threadpool(highlight_code, values["code"], values["language"], values["theme_name"], values["title"])
+    return await run_in_threadpool(highlight_code, values["code"], values["language"], values["theme_name"])
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -328,9 +328,7 @@ async def download_mp4(request: Request) -> Response:
 
 def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
     language = sample["language"]
-    extension = LANGUAGE_EXTENSIONS.get(language, language)
     return {
-        "title": f"{DEFAULT_SAMPLE.lower().replace(' ', '-')}.{extension}",
         "language": language,
         "code": sample["code"],
         "theme_name": "VS Code Dark+",
@@ -378,7 +376,7 @@ def _default_terminal_payload() -> dict[str, Any]:
 
 def _default_diff_payload() -> dict[str, Any]:
     return {
-        "title": "views.py", "language": "python", "theme_name": "VS Code Dark+",
+        "language": "python", "theme_name": "VS Code Dark+",
         "original_code": DEFAULT_DIFF_ORIGINAL, "revised_code": DEFAULT_DIFF_REVISED,
         "font_family": FONTS[0], "font_size": 20, "line_height": 1.55,
         "aspect_ratio": "16_9", "width": 1280, "height": 720, "radius": 14,
@@ -401,7 +399,7 @@ async def _diff_payload_from_request(request: Request) -> dict[str, Any]:
         aspect_ratio, _int(form.get("width"),1280,520,1600), _int(form.get("height"),720,320,1400)
     )
     return {
-        "title": str(form.get("title","changes.py"))[:120], "language": str(form.get("language","python")),
+        "language": str(form.get("language","python")),
         "theme_name": str(form.get("theme_name","VS Code Dark+")), "original_code": original,
         "revised_code": revised, "font_family": str(form.get("font_family")) if form.get("font_family") in FONTS else FONTS[0],
         "font_size": _int(form.get("font_size"),20,12,32), "line_height": _float(form.get("line_height"),1.55,1.1,2.2),
@@ -417,7 +415,7 @@ async def _diff_payload_from_request(request: Request) -> dict[str, Any]:
 def _diff_options_from_payload(values: dict[str, Any]):
     return make_diff_options(
         **{key: values[key] for key in (
-            "title","language","theme_name","font_family","font_size","line_height","width","height","radius",
+            "language","theme_name","font_family","font_size","line_height","width","height","radius",
             "transition_ms","hold_ms","start_delay_ms","background_style","gradient_name","canvas_padding",
             "show_line_numbers","show_window_chrome","autoplay","loop"
         )}, flush_frame=values["aspect_ratio"] == "display"
@@ -462,7 +460,6 @@ async def _payload_from_request(request: Request) -> dict[str, Any]:
     width, height, aspect_ratio = _apply_aspect_ratio(aspect_ratio, width, height)
 
     return {
-        "title": str(form.get("title", "code-typer-studio"))[:120],
         "language": str(form.get("language", "python")),
         "code": source,
         "theme_name": str(form.get("theme_name", "Light Studio")),
@@ -492,7 +489,6 @@ async def _payload_from_request(request: Request) -> dict[str, Any]:
 
 def _options_from_payload(values: dict[str, Any]):
     return make_render_options(
-        title=values["title"],
         language=values["language"],
         theme_name=values["theme_name"],
         font_family=values["font_family"],

@@ -10,9 +10,6 @@ body { background:var(--page-bg); color:var(--text); font-family:system-ui,sans-
 .window-dots { display:flex; gap:8px; }
 .window-dots i { width:9px; height:9px; border-radius:50%; background:#ff5f57; box-shadow:0 0 0 1px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.18); }
 .window-dots i:nth-child(2){background:#febc2e}.window-dots i:nth-child(3){background:#28c840}
-.file-title { display:flex; align-items:center; gap:7px; min-width:0; font-size:11px; color:var(--text); opacity:.66; }
-.file-title img { width:14px; height:14px; }
-.file-title span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .change-badge { margin-left:auto; border:1px solid color-mix(in srgb,var(--text) 12%,transparent); border-radius:999px; padding:3px 8px; color:var(--text); background:color-mix(in srgb,var(--text) 4%,transparent); font:600 8px/1.1 system-ui,sans-serif; letter-spacing:.1em; text-transform:uppercase; opacity:.68; }
 .code-viewport { position:relative; flex:1; min-height:0; overflow:hidden; }
 .diff-content { position:relative; min-width:max-content; padding:30px 0 44px; font-family:var(--font-family); font-size:var(--font-size); line-height:1; font-variant-ligatures:none; font-feature-settings:"calt" 0,"liga" 0; will-change:transform; }

@@ -11,10 +11,7 @@ body { background: var(--page-bg); color: var(--text); font-family: system-ui, s
 .window-dots i { width: 9px; height: 9px; border-radius: 50%; background: #ff5f57; box-shadow: 0 0 0 1px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.18); }
 .window-dots i:nth-child(2) { background: #febc2e; }
 .window-dots i:nth-child(3) { background: #28c840; }
-.file-title { display: flex; gap: 8px; align-items: center; min-width: 0; margin: 0 auto; font-size: 13px; font-weight: 500; color: var(--text); opacity: .82; }
-.file-title img { width: 15px; height: 15px; }
-.file-title span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chrome-language { font: 10px system-ui, sans-serif; text-transform: uppercase; letter-spacing: .1em; color: var(--text); opacity: .45; }
+.chrome-language { margin-left: auto; font: 10px system-ui, sans-serif; text-transform: uppercase; letter-spacing: .1em; color: var(--text); opacity: .45; }
 .code-viewport { position: relative; flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; }
 .code-viewport::-webkit-scrollbar { display: none; }
 .code-content { position: relative; min-width: max-content; margin: 0; padding: 30px 0 44px; font-family: var(--font-family); font-size: var(--font-size); line-height: var(--line-height); font-variant-ligatures: none; font-kerning: none; font-feature-settings: "calt" 0, "liga" 0; tab-size: 2; }

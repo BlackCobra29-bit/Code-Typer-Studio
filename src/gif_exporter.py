@@ -69,7 +69,7 @@ def _font(family, size, flags=0):
 class FrameRenderer:
     def __init__(self, code: str, options: RenderOptions):
         self.options = o = options
-        self.highlight = highlight_code(code, o.language, o.theme_name, o.title)
+        self.highlight = highlight_code(code, o.language, o.theme_name)
         self.timeline = build_timeline(self.highlight, o)
         self.times = [e['at'] for e in self.timeline['events']]
         self.duration = self.timeline['duration']
@@ -87,7 +87,6 @@ class FrameRenderer:
         self.lh = o.font_size * o.line_height
         self.content_x = (54 if o.show_line_numbers else 18) + (24 if o.show_diff_gutter else 0) + 16
         self.fonts = [_font(o.font_family, self.size, flag) for flag in range(4)]
-        self.small = _font('JetBrains Mono', 12)
         self.number_font = _font(o.font_family, self.size*.82)
         self.line_images, self.line_chars = [], []
         self.positions = [(self.content_x, 30 + (self.lh-self.size)/2, 0)]
@@ -247,8 +246,6 @@ class FrameRenderer:
                 draw.line((0,chrome_y,self.ew,chrome_y),fill=_blend(chrome_top,chrome,chrome_y/max(1,self.chrome-1)))
             for i,color in enumerate(('#ff5f57','#febc2e','#28c840')):
                 draw.ellipse((20+i*17,18,29+i*17,27),fill=color,outline=(25,25,25))
-            title = o.title if len(o.title)<55 else o.title[:52]+'…'
-            draw.text((self.ew/2,self.chrome/2),title,font=self.small,fill=_blend(self.bg,self.fg,.82),anchor='mm')
             draw.line((0,self.chrome,self.ew,self.chrome),fill=_blend(self.bg,self.fg,.08))
         draw.rounded_rectangle((0,0,self.ew-1,self.eh-1),radius=o.radius,outline=_blend(self.bg,self.fg,.17),width=1)
         draw.rounded_rectangle((1,1,self.ew-2,self.eh-2),radius=max(0,o.radius-1),outline=_blend(self.bg,self.fg,.035),width=1)

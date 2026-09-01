@@ -60,7 +60,7 @@
       </section>
 
       <section class="mt-12 flex w-full max-w-[843px] flex-col gap-3" aria-label="Studio controls">
-        <div class="grid rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100 sm:grid-cols-[1fr_1fr_1.4fr_1fr] sm:gap-2">
+        <div class="grid rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100 sm:grid-cols-3 sm:gap-2">
           <div class="relative block px-0 py-1 sm:px-0" data-custom-select="language">
             <span class="mb-1 block text-xs font-bold text-[#333]">Language</span>
             <button class="flex h-8 w-full items-center gap-2 rounded-md bg-gray-100 px-2 text-left text-sm text-slate-700 outline-none transition hover:bg-slate-200 focus:ring-2 focus:ring-sky-500/30" type="button" data-select-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="language-menu">
@@ -88,11 +88,6 @@
             </select>
             <div class="absolute left-0 top-full z-50 mt-2 hidden max-h-72 min-w-full w-max max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200" id="theme-menu" data-select-menu role="listbox"></div>
           </div>
-
-          <label class="block px-0 py-1 sm:px-0">
-            <span class="mb-1 block text-xs font-bold text-[#333]">File Name</span>
-            <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="title" name="title" value="{{ values.title }}" placeholder="File name">
-          </label>
 
           <div class="relative block px-0 py-1 sm:px-0" data-custom-select="sample_name">
             <span class="mb-1 block text-xs font-bold text-[#333]">Sample</span>

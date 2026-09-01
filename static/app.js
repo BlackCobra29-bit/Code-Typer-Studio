@@ -7,7 +7,6 @@ form.dataset.codeStudioInitialized = "true";
 const previewTrigger = document.getElementById("preview-trigger");
 const code = document.getElementById("code");
 const language = document.getElementById("language");
-const title = document.getElementById("title");
 const theme = document.getElementById("theme_name");
 const aspectRatio = document.getElementById("aspect_ratio");
 const backgroundStyle = document.getElementById("background_style");
@@ -45,16 +44,9 @@ const languageLabels = Object.fromEntries(
 const languageBadges = Object.fromEntries(
   Object.entries(languageCatalog).map(([languageKey, config]) => [languageKey, config.icon || "json.svg"]),
 );
-const languageExtensions = Object.fromEntries(
-  Object.entries(languageCatalog).map(([languageKey, config]) => [languageKey, config.extension || languageKey]),
-);
 const codeMirrorModes = Object.fromEntries(
   Object.entries(languageCatalog).map(([languageKey, config]) => [languageKey, config.codemirror_mode || "text/plain"]),
 );
-
-function fileExtension(sampleLanguage) {
-  return languageExtensions[sampleLanguage] || sampleLanguage;
-}
 
 function updateHeroControls() {
   const currentLanguage = language.value;
@@ -440,7 +432,6 @@ function loadSample(sampleName) {
   code.value = sample.code;
   setCodeEditorValue(sample.code);
   language.value = sample.language;
-  title.value = `${sampleName.toLowerCase().replaceAll(" ", "-")}.${fileExtension(sample.language)}`;
   updateHeroControls();
   schedulePreview(80);
 }
