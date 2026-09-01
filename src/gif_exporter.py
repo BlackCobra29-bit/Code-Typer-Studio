@@ -1,425 +1,266 @@
+"""Video frames sampled from the same TextMate tokens and timeline as HTML.
+
+MP4 is streamed to the encoder, never reduced to a handful of repeated frames.
+GIF is a smaller, 20 fps delivery format with an explicit duration limit.
+"""
 from __future__ import annotations
 
+import math
+from bisect import bisect_right
 from io import BytesIO
-from functools import lru_cache
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import imageio.v2 as imageio
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
-from pygments.lexers import TextLexer, get_lexer_by_name
-from pygments.util import ClassNotFound
+from PIL import Image, ImageColor, ImageDraw, ImageFilter, ImageFont
 
 from .gradients import gradient_stops
-from .languages import LANGUAGE_LEXERS
-from .renderer import RenderOptions
-from .syntax_style import syntax_color, syntax_palette
-from .themes import THEMES
+from .renderer import RenderOptions, _canvas_padding, _gradient_enabled
+from .syntax_style import highlight_code, editor_theme
+from .typing_timeline import build_timeline
+
+VIDEO_FPS = 60
+FONT_DIR = Path(__file__).resolve().parents[1] / 'static' / 'fonts'
 
 
-PREVIEW_DISPLAY_WIDTH = 700
-VIDEO_FPS = 30
-MAX_GIF_FRAMES = 54
-MAX_VIDEO_FRAMES = 72
+class ExportLimitError(ValueError):
+    pass
 
 
-def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> bytes:
-    frames, duration = _build_typing_frames(code, options, frame_step, max_frames=MAX_GIF_FRAMES)
-    output = BytesIO()
-    frames[0].save(
-        output,
-        format="GIF",
-        save_all=True,
-        append_images=frames[1:],
-        optimize=False,
-        duration=duration,
-        loop=0 if options.loop else 1,
-        disposal=2,
-    )
-    return output.getvalue()
+def _ease(value):
+    return 1 - (1 - max(0, min(1, value))) ** 3
+
+
+def _rgb(value, background=(0, 0, 0)):
+    channels = ImageColor.getrgb(value)
+    if len(channels) == 4:
+        alpha = channels[3] / 255
+        return tuple(round(channels[i] * alpha + background[i] * (1-alpha)) for i in range(3))
+    return channels
+
+
+def _blend(a, b, amount):
+    return tuple(round(x + (y-x)*amount) for x, y in zip(a, b))
+
+
+def _font(family, size, flags=0):
+    suffix = 'BoldItalic' if flags & 3 == 3 else 'Italic' if flags & 1 else 'Bold' if flags & 2 else 'Regular'
+    # Honor fonts installed on this host; the bundled family is the portable fallback.
+    windows = {'consolas': 'consola', 'cascadia code': 'CascadiaCode', 'menlo': 'Menlo', 'fira code': 'FiraCode'}
+    first = family.split(',')[0].strip().strip('"').lower()
+    candidates = []
+    if first in windows:
+        name = windows[first]
+        if first == 'consolas': name = {0:'consola', 1:'consolai', 2:'consolab', 3:'consolaz'}[flags & 3]
+        candidates.append(Path('C:/Windows/Fonts') / f'{name}.ttf')
+    candidates.append(FONT_DIR / f'JetBrainsMono-{suffix}.ttf')
+    for path in candidates:
+        if path.exists():
+            return ImageFont.truetype(str(path), max(8, round(size)))
+    raise RuntimeError('Bundled JetBrains Mono font is missing. Restore static/fonts.')
+
+
+class FrameRenderer:
+    def __init__(self, code: str, options: RenderOptions):
+        self.options = o = options
+        self.highlight = highlight_code(code, o.language, o.theme_name, o.title)
+        self.timeline = build_timeline(self.highlight, o)
+        self.times = [e['at'] for e in self.timeline['events']]
+        self.duration = self.timeline['duration']
+        self.theme = editor_theme(self.highlight)
+        self.bg = _rgb(self.highlight['background'])
+        self.fg = _rgb(self.highlight['foreground'])
+        self.width, self.height = o.width, o.height
+        self.padding = _canvas_padding(o) if _gradient_enabled(o) else 0
+        self.ew, self.eh = self.width-self.padding*2, self.height-self.padding*2
+        self.chrome = 48 if o.show_window_chrome else 0
+        self.vw, self.vh = self.ew-2, self.eh-self.chrome-2
+        self.size = o.font_size
+        self.lh = o.font_size * o.line_height
+        self.content_x = (54 if o.show_line_numbers else 18) + (24 if o.show_diff_gutter else 0) + 16
+        self.fonts = [_font(o.font_family, self.size, flag) for flag in range(4)]
+        self.small = _font('JetBrains Mono', 12)
+        self.number_font = _font(o.font_family, self.size*.82)
+        self.line_images, self.line_chars = [], []
+        self.positions = [(self.content_x, 28 + (self.lh-self.size)/2, 0)]
+        self._layout()
+        self.scroll_keys = []
+        self.scroll_times = []
+        target_x = target_y = 0
+        max_y = max(0, 28 + len(self.highlight['lines'])*self.lh + 40-self.vh)
+        max_x = max(0, max((line.width for line in self.line_images), default=0)+self.content_x+32-self.vw)
+        for event in self.timeline['events']:
+            x, y, _ = self.positions[event['count']]
+            sx = max(0, min(max_x, x-self.vw+60))
+            sy = max(0, min(max_y, y-self.vh+self.lh*2.5))
+            if (sx, sy) != (target_x, target_y):
+                previous = self._scroll_at(event['at'])
+                self.scroll_keys.append((previous[0], previous[1], sx, sy))
+                self.scroll_times.append(event['at'])
+                target_x, target_y = sx, sy
+        self.base = self._background()
+
+    def _layout(self):
+        char_index = 0
+        for line_no, tokens in enumerate(self.highlight['lines']):
+            items, x = [], 0.0
+            for token in tokens:
+                font = self.fonts[token['fontStyle'] & 3]
+                for char in token['content']:
+                    advance = float(font.getlength(char)) if char != '\t' else float(font.getlength(' '))*2 - x % (float(font.getlength(' '))*2)
+                    at = self.timeline['chars'][char_index]['at']
+                    items.append((char, x, advance, token, at, char_index))
+                    x += advance
+                    self.positions.append((self.content_x+x, 28+line_no*self.lh+(self.lh-self.size)/2, line_no))
+                    char_index += 1
+            strip = Image.new('RGBA', (max(1, math.ceil(x)+6), math.ceil(self.lh)), (0,0,0,0))
+            draw = ImageDraw.Draw(strip)
+            for char, x, advance, token, _, _ in items:
+                font = self.fonts[token['fontStyle'] & 3]
+                ascent, descent = font.getmetrics()
+                baseline = (self.lh-ascent-descent)/2+ascent
+                if char != '\t':
+                    draw.text((x, baseline), char, font=font, fill=token['color'], anchor='ls')
+                if token['fontStyle'] & 4:
+                    draw.line((x, baseline+2, x+advance, baseline+2), fill=token['color'])
+            self.line_images.append(strip)
+            self.line_chars.append(items)
+            if line_no < len(self.highlight['lines'])-1:
+                self.positions.append((self.content_x, 28+(line_no+1)*self.lh+(self.lh-self.size)/2, line_no+1))
+                char_index += 1
+
+    def _background(self):
+        if not self.padding:
+            return Image.new('RGB', (self.width, self.height), self.bg)
+        # Vectorized equivalent of the 135-degree CSS gradient.
+        colors = np.array([_rgb(c) for c in gradient_stops(self.options.gradient_name)], dtype=float)
+        yy, xx = np.mgrid[0:self.height, 0:self.width]
+        position = (xx+yy)/max(1, self.width+self.height-2)*(len(colors)-1)
+        index = np.minimum(len(colors)-2, position.astype(int))
+        weight = (position-index)[..., None]
+        array = colors[index]*(1-weight)+colors[index+1]*weight
+        image = Image.fromarray(array.astype('uint8'))
+        shadow = Image.new('RGBA', image.size)
+        draw = ImageDraw.Draw(shadow)
+        draw.rounded_rectangle((self.padding, self.padding+16, self.width-self.padding, self.height-self.padding+16), radius=self.options.radius, fill=(0,0,0,110))
+        shadow = shadow.filter(ImageFilter.GaussianBlur(22))
+        image.paste(shadow, (0,0), shadow)
+        return image
+
+    def _scroll_at(self, time):
+        index = bisect_right(self.scroll_times, time)-1
+        if index < 0: return 0, 0
+        fx, fy, x, y = self.scroll_keys[index]
+        t = _ease((time-self.scroll_times[index])/220)
+        return fx+(x-fx)*t, fy+(y-fy)*t
+
+    def frame(self, time: float) -> Image.Image:
+        o = self.options
+        event_index = bisect_right(self.times, time)-1
+        event = self.timeline['events'][event_index] if event_index >= 0 else None
+        count = event['count'] if event else 0
+        x, y, active = self.positions[count]
+        scroll_x, scroll_y = self._scroll_at(time)
+        editor = Image.new('RGB', (self.ew, self.eh), self.bg)
+        surface = Image.new('RGB', (self.vw, self.vh), self.bg)
+        draw = ImageDraw.Draw(surface)
+        active_y = 28+active*self.lh-scroll_y
+        draw.rectangle((0, active_y, self.vw, active_y+self.lh), fill=_blend(self.bg, self.fg, .03))
+        for line_no, strip in enumerate(self.line_images):
+            row_y = 28+line_no*self.lh-scroll_y
+            if row_y+self.lh < 0 or row_y >= self.vh: continue
+            if o.show_line_numbers:
+                color = self.fg if line_no == active else _blend(self.bg, _rgb(self.theme['muted'], self.bg), .55)
+                ascent, descent = self.number_font.getmetrics()
+                baseline = row_y+(self.lh-ascent-descent)/2+ascent
+                draw.text((self.content_x-26-scroll_x, baseline), str(line_no+1), font=self.number_font, fill=color, anchor='rs')
+            if o.show_diff_gutter:
+                draw.text((10-scroll_x, row_y), '+', font=self.number_font, fill=self.theme['plus'])
+            items = self.line_chars[line_no]
+            if not items: continue
+            # Crop settled glyphs once. Only the reveal frontier needs alpha work.
+            settled = [item for item in items if item[4]+self.timeline['fadeMs'] <= time]
+            end_x = math.ceil(settled[-1][1]+settled[-1][2]) if settled else 0
+            left = max(0, math.floor(scroll_x-self.content_x))
+            right = min(strip.width, math.ceil(scroll_x+self.vw-self.content_x))
+            if right <= left: continue
+            region = strip.crop((left, 0, right, strip.height))
+            alpha = np.asarray(region.getchannel('A')).copy()
+            if end_x < right:
+                alpha[:, max(0,end_x-left):] = 0
+                for char, char_x, advance, token, at, index in items[len(settled):]:
+                    if at > time: break
+                    start, end = max(left, math.floor(char_x)), min(right, math.ceil(char_x+advance))
+                    if end <= start: continue
+                    amount = max(0,min(1,(time-at)/self.timeline['fadeMs']))
+                    original = np.asarray(strip.getchannel('A').crop((start,0,end,strip.height)))
+                    alpha[:, start-left:end-left] = (original*amount).astype('uint8')
+            region.putalpha(Image.fromarray(alpha))
+            surface.paste(region, (round(self.content_x+left-scroll_x), round(row_y)), region)
+        age = time-(event['at'] if event else 0)
+        before_count = self.timeline['events'][event_index-1]['count'] if event_index > 0 else 0
+        bx, by, before_line = self.positions[before_count]
+        if before_line == active: x = bx+(x-bx)*_ease(age/45)
+        if time < self.timeline['typingEnd']+1100 and (age < 350 or int((age-350)/500)%2 == 0):
+            cx, cy = x-scroll_x, y-scroll_y
+            color = _rgb(self.theme['accent'], self.bg)
+            if o.cursor == 'underline': draw.rectangle((cx,cy+self.size,cx+self.size*.6,cy+self.size+1),fill=color)
+            elif o.cursor == 'block': draw.rectangle((cx,cy,cx+self.size*.6,cy+self.size),fill=_blend(self.bg,color,.55))
+            else: draw.rectangle((cx,cy,cx+1,cy+self.size),fill=color)
+        editor.paste(surface, (1,self.chrome+1))
+        draw = ImageDraw.Draw(editor)
+        if self.chrome:
+            draw.rectangle((0,0,self.ew,self.chrome),fill=_rgb(self.theme['chrome_bg'],self.bg))
+            for i,color in enumerate(('#ff5f57','#febc2e','#28c840')):
+                draw.ellipse((22+i*18,19,32+i*18,29),fill=color)
+            title = o.title if len(o.title)<55 else o.title[:52]+'…'
+            draw.text((self.ew/2,24),title,font=self.small,fill=_blend(self.bg,self.fg,.82),anchor='mm')
+            draw.line((0,self.chrome,self.ew,self.chrome),fill=_blend(self.bg,self.fg,.08))
+        draw.rounded_rectangle((0,0,self.ew-1,self.eh-1),radius=o.radius,outline=_blend(self.bg,self.fg,.12))
+        mask = Image.new('L',editor.size)
+        ImageDraw.Draw(mask).rounded_rectangle((0,0,self.ew-1,self.eh-1),radius=o.radius,fill=255)
+        entrance = _ease(time/max(1,min(550,o.start_delay_ms or 1)))
+        if entrance < 1: mask = mask.point(lambda value: round(value*(.88+.12*entrance)))
+        result = self.base.copy()
+        result.paste(editor,(self.padding,self.padding+round((1-entrance)*10)),mask)
+        return result
 
 
 def build_typing_mp4(code: str, options: RenderOptions, frame_step: int = 3, fps: int = VIDEO_FPS) -> bytes:
-    frames, duration = _build_typing_frames(code, options, frame_step, max_frames=MAX_VIDEO_FRAMES)
-    frame_hold = max(1, round(duration / (1000 / fps)))
+    renderer = FrameRenderer(code, options)
+    if renderer.duration > 180000:
+        raise ExportLimitError('MP4 is limited to 3 minutes. Increase typing speed or export HTML for longer scenes.')
+    with TemporaryDirectory(prefix='code-typing-') as directory:
+        path = Path(directory) / 'animation.mp4'
+        with imageio.get_writer(str(path), fps=fps, codec='libx264', quality=8, macro_block_size=1, pixelformat='yuv420p') as writer:
+            for frame_no in range(math.ceil(renderer.duration*fps/1000)):
+                writer.append_data(np.asarray(renderer.frame(frame_no*1000/fps)))
+        return path.read_bytes()
+
+
+def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> bytes:
+    renderer = FrameRenderer(code, options)
+    if renderer.duration > 45000:
+        raise ExportLimitError('GIF is limited to 45 seconds. Increase typing speed, shorten the snippet, or choose MP4/HTML.')
+    scale = min(1, 700/renderer.width, 700/renderer.height)
+    size = (round(renderer.width*scale),round(renderer.height*scale))
+    # One palette for the whole clip prevents theme colors flickering between frames.
+    poster = renderer.frame(renderer.timeline['typingEnd']+200).resize(size,Image.Resampling.LANCZOS)
+    quantized = poster.quantize(colors=256)
+    original = quantized.getpalette()
+    # Reserve theme colors from every line, including lines already scrolled out.
+    colors = list(dict.fromkeys([renderer.bg, renderer.fg] +
+                  [_rgb(token['color'],renderer.bg) for line in renderer.highlight['lines'] for token in line]))
+    colors = list(dict.fromkeys(colors + [tuple(original[i:i+3]) for i in range(0,len(original),3)]))[:256]
+    colors.extend([(0,0,0)]*(256-len(colors)))
+    palette = Image.new('P',(1,1))
+    palette.putpalette([channel for color in colors for channel in color])
+    frames = []
+    for time in range(0, math.ceil(renderer.duration), 50):
+        frame = renderer.frame(time).resize(size,Image.Resampling.LANCZOS)
+        frames.append(frame.quantize(palette=palette,dither=Image.Dither.NONE))
     output = BytesIO()
-    with imageio.get_writer(output, format="mp4", fps=fps, codec="libx264", quality=7, macro_block_size=1) as writer:
-        for frame in frames:
-            array = np.asarray(frame.convert("RGB"))
-            for _ in range(frame_hold):
-                writer.append_data(array)
+    loop = {'loop': 0} if options.loop else {}
+    frames[0].save(output,format='GIF',save_all=True,append_images=frames[1:],duration=50,disposal=2,optimize=False,**loop)
     return output.getvalue()
-
-
-def _build_typing_frames(code: str, options: RenderOptions, frame_step: int, max_frames: int) -> tuple[list[Image.Image], int]:
-    theme = THEMES.get(options.theme_name, THEMES["VS Code Dark+"])
-    width = max(520, min(1600, int(options.width)))
-    height = max(260, min(1400, int(options.height)))
-    use_gradient_canvas = _gradient_enabled(options)
-    canvas_padding = _canvas_padding(options, width, height) if use_gradient_canvas else 0
-    editor_width = max(420, width - (canvas_padding * 2))
-    editor_height = max(220, height - (canvas_padding * 2))
-    font_size = _gif_font_size(options.font_size, editor_width)
-    line_height = int(font_size * max(1.1, min(2.2, float(options.line_height))))
-    chrome_height = 42 if options.show_window_chrome else 0
-    gutter_width = 84 if options.show_line_numbers else 30
-    content_x = gutter_width + 24
-    top_y = chrome_height + 20
-    padding_bottom = 24
-    font = _load_font(options.font_family, font_size)
-    small_font = _load_font(options.font_family, max(10, _gif_font_size(13, editor_width)))
-    chars = _token_chars(code or " ", options.language, options.theme_name)
-    step = max(1, min(12, int(frame_step)))
-    raw_counts = _visible_counts(chars, options.typing_mode, step)
-    counts = _limit_counts(raw_counts, max_frames)
-
-    max_visible_lines = max(1, (editor_height - chrome_height - padding_bottom) // line_height)
-    frames: list[Image.Image] = []
-    base_canvas = (
-        _base_canvas(width, height, canvas_padding, options.gradient_name, max(12, min(42, int(options.radius) + 14)))
-        if use_gradient_canvas
-        else None
-    )
-    for visible_count in counts:
-        active_line = _active_line(chars, visible_count)
-        first_line = max(0, active_line - max_visible_lines + 2)
-        editor_frame = _draw_editor_frame(
-            chars=chars,
-            visible_count=visible_count,
-            first_line=first_line,
-            max_visible_lines=max_visible_lines,
-            active_line=active_line,
-            code=code,
-            width=editor_width,
-            height=editor_height,
-            line_height=line_height,
-            chrome_height=chrome_height,
-            gutter_width=gutter_width,
-            content_x=content_x,
-            top_y=top_y,
-            font=font,
-            small_font=small_font,
-            theme=theme,
-            options=options,
-        )
-        if use_gradient_canvas:
-            frames.append(
-                _compose_canvas_frame(
-                    editor_frame=editor_frame,
-                    canvas=base_canvas,
-                    radius=max(12, min(42, int(options.radius) + 14)),
-                )
-            )
-        else:
-            frames.append(editor_frame)
-
-    if frames:
-        frames.extend([frames[-1].copy() for _ in range(6)])
-
-    duration = _scaled_frame_duration(options, step, len(raw_counts), len(counts))
-    return frames, duration
-
-
-def _draw_editor_frame(
-    chars,
-    visible_count: int,
-    first_line: int,
-    max_visible_lines: int,
-    active_line: int,
-    code: str,
-    width: int,
-    height: int,
-    line_height: int,
-    chrome_height: int,
-    gutter_width: int,
-    content_x: int,
-    top_y: int,
-    font,
-    small_font,
-    theme,
-    options: RenderOptions,
-) -> Image.Image:
-    image = Image.new("RGB", (width, height), theme["editor_bg"])
-    draw = ImageDraw.Draw(image)
-    radius = max(0, min(32, int(options.radius)))
-    draw.rounded_rectangle((0, 0, width - 1, height - 1), radius=radius, fill=theme["editor_bg"], outline=theme["border"])
-
-    if options.show_window_chrome:
-        draw.rounded_rectangle((0, 0, width - 1, chrome_height), radius=radius, fill=theme["chrome_bg"])
-        draw.rectangle((0, chrome_height - radius, width - 1, chrome_height), fill=theme["chrome_bg"])
-        for index, color in enumerate(["#ff5f56", "#ffbd2e", "#27c93f"]):
-            x = 18 + index * 20
-            draw.ellipse((x, 16, x + 10, 26), fill=color)
-        draw.text((88, 13), options.title or "code-typer-studio", font=small_font, fill=theme["muted"])
-
-    draw.rectangle((0, chrome_height, gutter_width, height), fill=theme["gutter_bg"])
-
-    visible_chars = chars[:visible_count]
-    cursor_x = content_x
-    cursor_y = top_y
-    line_count = max(1, len(code.split("\n")))
-
-    for visible_line in range(first_line, min(line_count, first_line + max_visible_lines)):
-        y = top_y + (visible_line - first_line) * line_height
-        if visible_line == active_line:
-            draw.rectangle((0, y, width, y + line_height), fill=theme["active"])
-        if visible_line > active_line:
-            continue
-        if options.show_diff_gutter:
-            draw.text((18, y + 1), "+", font=font, fill=theme["plus"])
-        if options.show_line_numbers:
-            number = str(visible_line + 1)
-            number_width = draw.textlength(number, font=font)
-            draw.text((gutter_width - number_width - 14, y + 1), number, font=font, fill=theme["muted"])
-
-    line_x = {}
-    for char in visible_chars:
-        line = char["line"]
-        if line < first_line or line >= first_line + max_visible_lines:
-            continue
-        y = top_y + (line - first_line) * line_height
-        x = line_x.get(line, content_x)
-        if char["text"] != "\n":
-            draw.text((x, y + 1), char["text"], font=font, fill=char["color"])
-            x += draw.textlength(char["text"], font=font)
-            line_x[line] = x
-            cursor_x = x
-            cursor_y = y
-
-    _draw_cursor(draw, cursor_x, cursor_y + 3, font, theme["accent"], options.cursor)
-    return image
-
-
-def _compose_canvas_frame(
-    editor_frame: Image.Image,
-    canvas: Image.Image,
-    radius: int,
-) -> Image.Image:
-    background = canvas.copy()
-    left = (background.width - editor_frame.width) // 2
-    top = (background.height - editor_frame.height) // 2
-    mask = _rounded_mask(editor_frame.size, radius)
-    background.paste(editor_frame, (left, top), mask)
-    return background
-
-
-@lru_cache(maxsize=32)
-def _gradient_background(width: int, height: int, gradient_name: str) -> Image.Image:
-    colors = [_hex_to_rgb(color) for color in gradient_stops(gradient_name)]
-    image = Image.new("RGB", (width, height))
-    pixels = image.load()
-    denominator = max(1, width + height - 2)
-    for y in range(height):
-        for x in range(width):
-            position = (x + y) / denominator
-            color = _sample_gradient(colors, position)
-            pixels[x, y] = color
-    return image
-
-
-@lru_cache(maxsize=32)
-def _base_canvas(width: int, height: int, padding: int, gradient_name: str, radius: int) -> Image.Image:
-    return _gradient_background(width, height, gradient_name).copy()
-
-
-@lru_cache(maxsize=16)
-def _rounded_mask(size: tuple[int, int], radius: int) -> Image.Image:
-    mask = Image.new("L", size, 0)
-    draw = ImageDraw.Draw(mask)
-    draw.rounded_rectangle((0, 0, size[0] - 1, size[1] - 1), radius=radius, fill=255)
-    return mask
-
-
-def _sample_gradient(colors: list[tuple[int, int, int]], position: float) -> tuple[int, int, int]:
-    if len(colors) == 1:
-        return colors[0]
-    bounded = max(0.0, min(1.0, position))
-    scaled = bounded * (len(colors) - 1)
-    index = min(len(colors) - 2, int(scaled))
-    local = scaled - index
-    start = colors[index]
-    end = colors[index + 1]
-    return tuple(
-        int(start[channel] + ((end[channel] - start[channel]) * local))
-        for channel in range(3)
-    )
-
-
-def _draw_cursor(draw: ImageDraw.ImageDraw, x: float, y: int, font, color: str, cursor: str) -> None:
-    ascent, descent = font.getmetrics()
-    height = ascent + descent - 2
-    if cursor == "block":
-        draw.rectangle((x + 1, y, x + 10, y + height), fill=color)
-    elif cursor == "underline":
-        draw.rectangle((x + 1, y + height - 3, x + 13, y + height), fill=color)
-    else:
-        draw.rectangle((x + 1, y, x + 3, y + height), fill=color)
-
-
-def _token_chars(code: str, language: str, theme_name: str) -> list[dict]:
-    lexer = _lexer(language)
-    line = 0
-    color = syntax_palette(theme_name)["base"]
-    chars = []
-
-    for token, text in lexer.get_tokens(code):
-        color = syntax_color(theme_name, token)
-        for char in text:
-            chars.append({"text": char, "line": line, "color": color})
-            if char == "\n":
-                line += 1
-
-    return chars
-
-
-def _visible_counts(chars: list[dict], typing_mode: str, frame_step: int) -> list[int]:
-    total = len(chars)
-    if typing_mode == "line":
-        counts = [0]
-        for index, char in enumerate(chars, start=1):
-            next_char = chars[index] if index < total else None
-            if next_char is None or next_char["line"] != char["line"]:
-                counts.append(index)
-        return _unique_counts(counts, total)
-
-    if typing_mode == "word":
-        counts = [0]
-        has_word_char = False
-        for index, char in enumerate(chars, start=1):
-            text = char["text"]
-            next_char = chars[index] if index < total else None
-            is_space = text.isspace()
-            next_is_space = bool(next_char and next_char["text"].isspace())
-            next_is_same_line = bool(next_char and next_char["line"] == char["line"])
-
-            has_word_char = has_word_char or not is_space
-            if next_char is None or not next_is_same_line or (has_word_char and is_space and not next_is_space):
-                counts.append(index)
-                has_word_char = False
-        return _unique_counts(counts, total)
-
-    counts = list(range(0, total + 1, frame_step))
-    if not counts or counts[-1] != total:
-        counts.append(total)
-    return counts
-
-
-def _unique_counts(counts: list[int], total: int) -> list[int]:
-    clean_counts = []
-    seen = set()
-    for count in counts:
-        bounded = max(0, min(total, count))
-        if bounded not in seen:
-            seen.add(bounded)
-            clean_counts.append(bounded)
-    if not clean_counts or clean_counts[-1] != total:
-        clean_counts.append(total)
-    return clean_counts
-
-
-def _limit_counts(counts: list[int], max_frames: int) -> list[int]:
-    if len(counts) <= max_frames:
-        return counts
-    if max_frames < 2:
-        return [counts[0], counts[-1]]
-    limited = []
-    for index in range(max_frames):
-        source_index = round(index * (len(counts) - 1) / (max_frames - 1))
-        value = counts[source_index]
-        if not limited or limited[-1] != value:
-            limited.append(value)
-    if limited[-1] != counts[-1]:
-        limited.append(counts[-1])
-    return limited
-
-
-def _frame_duration(options: RenderOptions, frame_step: int) -> int:
-    if options.typing_mode == "line":
-        return max(20, min(1000, int(options.speed_ms) + int(options.line_pause_ms)))
-    if options.typing_mode == "word":
-        return max(20, min(600, int(options.speed_ms) * 4))
-    return max(20, min(250, int(options.speed_ms) * frame_step))
-
-
-def _scaled_frame_duration(options: RenderOptions, frame_step: int, original_frame_count: int, final_frame_count: int) -> int:
-    base = _frame_duration(options, frame_step)
-    if final_frame_count <= 0:
-        return base
-    factor = max(1.0, original_frame_count / final_frame_count)
-    return max(20, min(1200, int(base * factor)))
-
-
-def _active_line(chars: list[dict], visible_count: int) -> int:
-    if visible_count <= 0:
-        return 0
-    for char in reversed(chars[:visible_count]):
-        return char["line"]
-    return 0
-
-
-def _lexer(language: str):
-    language_key = (language or "").strip().lower()
-    lexer_name = LANGUAGE_LEXERS.get(language_key, language_key or "text")
-    try:
-        return get_lexer_by_name(lexer_name)
-    except ClassNotFound:
-        return TextLexer()
-
-
-def _gif_font_size(font_size: int, frame_width: int) -> int:
-    base_size = max(12, min(32, int(font_size)))
-    scale = max(1.0, frame_width / PREVIEW_DISPLAY_WIDTH)
-    return max(12, min(96, round(base_size * scale)))
-
-
-def _gradient_enabled(options: RenderOptions) -> bool:
-    return str(options.background_style).lower() == "gradient" and not options.flush_frame
-
-
-def _canvas_padding(options: RenderOptions, width: int, height: int) -> int:
-    high = max(18, int(min(width, height) * 0.18))
-    return max(18, min(high, int(options.canvas_padding)))
-
-
-def _hex_to_rgb(value: str) -> tuple[int, int, int]:
-    clean = value.strip().lstrip("#")
-    if len(clean) != 6:
-        return (0, 0, 0)
-    return tuple(int(clean[index : index + 2], 16) for index in (0, 2, 4))
-
-
-def _load_font(font_family: str, size: int):
-    candidates = _font_candidates(font_family)
-    for path in candidates:
-        if path.exists():
-            return ImageFont.truetype(str(path), size=size)
-    return ImageFont.load_default()
-
-
-def _font_candidates(font_family: str) -> list[Path]:
-    requested_fonts = [item.strip().strip("\"'").lower() for item in font_family.split(",")]
-    font_map = {
-        "cascadia code": [Path("C:/Windows/Fonts/CascadiaCode.ttf"), Path("C:/Windows/Fonts/CascadiaMono.ttf")],
-        "cascadia mono": [Path("C:/Windows/Fonts/CascadiaMono.ttf"), Path("C:/Windows/Fonts/CascadiaCode.ttf")],
-        "consolas": [Path("C:/Windows/Fonts/consola.ttf")],
-        "lucida console": [Path("C:/Windows/Fonts/lucon.ttf")],
-    }
-    fallback = [
-        Path("C:/Windows/Fonts/CascadiaCode.ttf"),
-        Path("C:/Windows/Fonts/CascadiaMono.ttf"),
-        Path("C:/Windows/Fonts/consola.ttf"),
-        Path("C:/Windows/Fonts/lucon.ttf"),
-    ]
-
-    candidates: list[Path] = []
-    for name in requested_fonts:
-        candidates.extend(font_map.get(name, []))
-    candidates.extend(fallback)
-
-    unique_candidates = []
-    seen = set()
-    for path in candidates:
-        if path not in seen:
-            seen.add(path)
-            unique_candidates.append(path)
-    return unique_candidates

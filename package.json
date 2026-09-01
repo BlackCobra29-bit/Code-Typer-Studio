@@ -1,0 +1,7 @@
+{
+  "name": "code-typer-studio-highlighting",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "dependencies": { "shiki": "4.4.2" }
+}

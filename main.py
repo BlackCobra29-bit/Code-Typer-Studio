@@ -5,12 +5,13 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
+from starlette.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from src.gif_exporter import build_typing_gif, build_typing_mp4
+from src.gif_exporter import build_typing_gif, build_typing_mp4, ExportLimitError
 from src.gradients import gradient_catalog
 from src.languages import LANGUAGE_CATALOG, LANGUAGE_EXTENSIONS, LANGUAGES
 from src.renderer import build_typing_html, export_project_json, make_render_options
@@ -23,13 +24,13 @@ from src.terminal_renderer import (
     build_terminal_html,
     build_terminal_mp4,
 )
-from src.themes import THEMES
+from src.syntax_style import THEME_NAMES, HighlightingUnavailable, highlight_code, normalize_code
 
 
 FONTS = [
+    "JetBrains Mono, Consolas, monospace",
     "Cascadia Code, Fira Code, Consolas, monospace",
     "Fira Code, Cascadia Code, Consolas, monospace",
-    "JetBrains Mono, Fira Code, Consolas, monospace",
     "Consolas, Monaco, monospace",
     "Menlo, Monaco, Consolas, monospace",
 ]
@@ -49,13 +50,13 @@ ASPECT_RATIO_DIMENSIONS = {
 }
 TYPING_MODES = [
     {"value": "character", "label": "Character"},
+    {"value": "token", "label": "Syntax token"},
     {"value": "word", "label": "Word"},
     {"value": "line", "label": "Line"},
 ]
 
 DEFAULT_SAMPLE = "Python API"
 DEFAULT_ASPECT_RATIO = "16_9"
-PREVIEW_LINE_HEIGHT = 1.28
 GIF_FRAME_STEP = 3
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -64,6 +65,22 @@ app = FastAPI(title="Code Typer Studio")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+
+
+@app.exception_handler(ExportLimitError)
+async def export_limit(request: Request, exc: ExportLimitError):
+    return Response(str(exc), status_code=422, media_type="text/plain")
+
+
+@app.exception_handler(HighlightingUnavailable)
+async def highlighting_unavailable(request: Request, exc: HighlightingUnavailable):
+    return Response(str(exc), status_code=503, media_type="text/plain")
+
+
+@app.post("/highlight")
+async def highlight_source(request: Request):
+    values = await _payload_from_request(request)
+    return await run_in_threadpool(highlight_code, values["code"], values["language"], values["theme_name"], values["title"])
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -79,14 +96,14 @@ async def index(request: Request) -> HTMLResponse:
 async def code_typer(request: Request) -> HTMLResponse:
     sample = SAMPLES[DEFAULT_SAMPLE]
     initial = _default_payload(sample)
-    preview_html = _build_preview(initial)
+    preview_html = await run_in_threadpool(_build_preview, initial)
     return templates.TemplateResponse(
         request,
         "code_typer.html",
         {
             "languages": LANGUAGES,
             "language_catalog": LANGUAGE_CATALOG,
-            "themes": list(THEMES.keys()),
+            "themes": list(THEME_NAMES),
             "gradients": gradient_catalog(),
             "fonts": FONTS,
             "aspect_ratios": ASPECT_RATIOS,
@@ -167,7 +184,7 @@ async def preview(request: Request) -> HTMLResponse:
         request,
         "_preview.html",
         {
-            "preview_html": _build_preview(values),
+            "preview_html": await run_in_threadpool(_build_preview, values),
             "height": _int(values.get("height"), 620, 320, 1400),
         },
     )
@@ -177,7 +194,7 @@ async def preview(request: Request) -> HTMLResponse:
 async def download_html(request: Request) -> Response:
     values = await _payload_from_request(request)
     options = _options_from_payload(values)
-    html = build_typing_html(values.get("code", ""), options, standalone=True)
+    html = await run_in_threadpool(build_typing_html, values.get("code", ""), options, standalone=True)
     return Response(
         html,
         media_type="text/html",
@@ -201,7 +218,7 @@ async def download_project(request: Request) -> Response:
 async def download_gif(request: Request) -> Response:
     values = await _payload_from_request(request)
     options = _options_from_payload(values)
-    gif_bytes = build_typing_gif(
+    gif_bytes = await run_in_threadpool(build_typing_gif,
         values.get("code", ""),
         options,
         frame_step=GIF_FRAME_STEP,
@@ -217,7 +234,7 @@ async def download_gif(request: Request) -> Response:
 async def download_mp4(request: Request) -> Response:
     values = await _payload_from_request(request)
     options = _options_from_payload(values)
-    mp4_bytes = build_typing_mp4(
+    mp4_bytes = await run_in_threadpool(build_typing_mp4,
         values.get("code", ""),
         options,
         frame_step=GIF_FRAME_STEP,
@@ -238,18 +255,18 @@ def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
         "code": sample["code"],
         "theme_name": "VS Code Dark+",
         "font_family": FONTS[0],
-        "font_size": 18,
-        "line_height": 1.55,
+        "font_size": 26,
+        "line_height": 1.65,
         "aspect_ratio": DEFAULT_ASPECT_RATIO,
         "width": 1280,
         "height": 720,
         "radius": 12,
         "speed_ms": 24,
         "line_pause_ms": 160,
-        "start_delay_ms": 350,
+        "start_delay_ms": 550,
         "typing_mode": "character",
-        "background_style": "none",
-        "gradient_name": "sunset",
+        "background_style": "gradient",
+        "gradient_name": "midnight",
         "canvas_padding": 64,
         "show_line_numbers": True,
         "show_diff_gutter": False,
@@ -308,17 +325,20 @@ def _terminal_options(values: dict[str, Any]) -> TerminalOptions:
 
 async def _payload_from_request(request: Request) -> dict[str, Any]:
     form = await request.form()
+    source = normalize_code(str(form.get("code", "")))
+    if len(source) > 20000 or source.count("\n") > 1000 or any(len(line) > 2000 for line in source.split("\n")):
+        raise HTTPException(422, "Use up to 20,000 characters, 1,000 lines, and 2,000 characters per line.")
     aspect_ratio = str(form.get("aspect_ratio", DEFAULT_ASPECT_RATIO))
     width = _int(form.get("width"), 1280, 520, 1600)
     height = _int(form.get("height"), 720, 320, 1400)
     width, height, aspect_ratio = _apply_aspect_ratio(aspect_ratio, width, height)
 
     return {
-        "title": str(form.get("title", "code-typer-studio")),
+        "title": str(form.get("title", "code-typer-studio"))[:120],
         "language": str(form.get("language", "python")),
-        "code": str(form.get("code", "")),
+        "code": source,
         "theme_name": str(form.get("theme_name", "Light Studio")),
-        "font_family": str(form.get("font_family", FONTS[0])),
+        "font_family": str(form.get("font_family")) if form.get("font_family") in FONTS else FONTS[0],
         "font_size": _int(form.get("font_size"), 18, 12, 32),
         "line_height": _float(form.get("line_height"), 1.55, 1.1, 2.2),
         "aspect_ratio": aspect_ratio,
@@ -371,8 +391,7 @@ def _options_from_payload(values: dict[str, Any]):
 
 
 def _build_preview(values: dict[str, Any]) -> str:
-    preview_values = {**values, "line_height": PREVIEW_LINE_HEIGHT}
-    return build_typing_html(values.get("code", ""), _options_from_payload(preview_values), standalone=False)
+    return build_typing_html(values.get("code", ""), _options_from_payload(values), standalone=False)
 
 
 def _bool(value: Any) -> bool:

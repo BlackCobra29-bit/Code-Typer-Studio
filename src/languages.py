@@ -2,6 +2,8 @@ from __future__ import annotations
 
 
 LANGUAGE_CATALOG = {
+    "auto": {"label": "Auto detect", "icon": "json.svg", "extension": "txt", "extensions": [], "codemirror_mode": "text/plain"},
+    "text": {"label": "Plain text", "icon": "json.svg", "extension": "txt", "extensions": ["txt"], "codemirror_mode": "text/plain"},
     "python": {
         "label": "Python",
         "icon": "python.svg",

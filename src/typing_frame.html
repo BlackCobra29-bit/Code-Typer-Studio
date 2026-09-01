@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+__FONT_CSS__
+:root {
+  --page-bg: __PAGE_BG__; --editor-bg: __EDITOR_BG__; --chrome-bg: __CHROME_BG__;
+  --text: __TEXT__; --muted: __MUTED__; --active: __ACTIVE__; --accent: __ACCENT__;
+  --border: __BORDER__; --plus: __PLUS__; --font-family: __FONT_FAMILY__;
+  --font-size: __FONT_SIZE__; --line-height: __LINE_HEIGHT__; --radius: __RADIUS__;
+  --stage-width: __WIDTH__; --stage-height: __HEIGHT__; --canvas-fill: __CANVAS_FILL__;
+  --canvas-padding: __SHELL_PADDING__; --numbers: __NUMBER_WIDTH__; --diff: __DIFF_WIDTH__;
+}
+__FRAME_CSS__
+.window-chrome { display: __CHROME_DISPLAY__; }
+</style>
+</head>
+<body>
+<main class="stage-shell" id="stage">
+  <section class="editor-window __CURSOR_CLASS__" id="editorWindow" aria-label="Animated code preview">
+    <div class="window-chrome">
+      <span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="file-title"><img src="__FILE_ICON_SRC__" alt="__FILE_ICON_ALT__"><span>__TITLE__</span></span>
+      <span class="chrome-language">__LANGUAGE__</span>
+    </div>
+    <div class="code-viewport" id="viewport">
+      <div class="code-content" id="codeContent">__CODE_LINES__</div>
+      <span class="typing-cursor" id="cursor" aria-hidden="true"></span>
+    </div>
+  </section>
+</main>
+<nav class="transport" aria-label="Animation playback">
+  <button id="playPause" type="button">Play</button>
+  <button id="restart" type="button" aria-label="Restart animation">â†º</button>
+  <input id="scrubber" type="range" min="0" max="1000" value="0" aria-label="Animation timeline">
+  <output id="timecode">0:00</output>
+</nav>
+<script type="application/json" id="typingOptions">__OPTIONS_JSON__</script>
+<script>__FRAME_JS__</script>
+</body>
+</html>

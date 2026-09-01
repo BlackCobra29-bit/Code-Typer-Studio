@@ -1,6 +1,6 @@
 {% extends "_base.html" %}
 
-{% block title %}Code Typer — Code Typer Studio{% endblock %}
+{% block title %}Code Typer â€” Code Typer Studio{% endblock %}
 {% block content %}
 <form id="studio-form" class="min-h-full bg-slate-50" method="post">
   <button
@@ -12,26 +12,33 @@
       hx-target="#preview-panel"
       hx-swap="innerHTML"
       hx-trigger="refreshPreview"
+      hx-sync="this:replace"
     ></button>
 
   <div class="mx-auto flex w-full max-w-[1265px] flex-col items-center px-4 pb-24 sm:pb-28">
       <section class="w-full max-w-[900px] py-12 text-center sm:py-16" aria-labelledby="code-typer-title">
         <p class="text-sm font-bold uppercase tracking-[0.22em] text-blue-600">Code Typer</p>
-        <h1 id="code-typer-title" class="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">Create a code typing animation</h1>
-        <p class="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">Customize the source, language, syntax theme, typing mode, speed, cursor, and output size, then export the finished animation.</p>
+        <h1 id="code-typer-title" class="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">Code, beautifully in motion.</h1>
+        <p class="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">Real editor themes. Thoughtful motion. Turn your next snippet into a film worth watching.</p>
       </section>
 
       <section class="flex w-full scroll-mt-24 justify-center" id="preview" aria-label="Animation preview">
-        <div class="w-full max-w-[700px]">
+        <div class="studio-preview-wrap w-full">
           <div class="relative overflow-hidden">
-            <div id="preview-panel" class="h-[300px] min-w-0 overflow-hidden bg-white">
+            <div id="preview-panel" class="min-w-0 overflow-hidden">
               {% include "_preview.html" %}
             </div>
           </div>
-          <strong class="sr-only" id="preview-status">Ready</strong>
+          <div class="studio-transport">
+            <button type="button" id="preview-play" aria-label="Pause animation">Pause</button>
+            <button type="button" id="preview-restart" aria-label="Restart animation">↺</button>
+            <input id="preview-scrubber" type="range" min="0" max="1000" value="0" aria-label="Animation timeline">
+            <output id="preview-time">0.0 / 0.0s</output>
+          </div>
+          <div class="preview-caption"><span id="syntax-engine">TextMate · Shiki</span><strong id="preview-status" role="status">Ready</strong></div>
           <nav class="mt-6 flex flex-wrap justify-center gap-4" aria-label="Primary actions">
-            <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/25" type="button" onclick="htmx.trigger(document.getElementById('preview-trigger'), 'refreshPreview')">
-              Restart
+            <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/25" type="button" id="replay-action">
+              Replay
             </button>
             <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-blue-600/30 focus:outline-none focus:ring-4 focus:ring-blue-500/25" type="submit" formaction="/download/html" formmethod="post">
               Export HTML
@@ -105,7 +112,7 @@
         <section class="rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100" id="editor" aria-label="Code editor">
           <div class="mb-2 flex items-center justify-between gap-2">
             <div class="text-xs font-bold text-[#333]">Code</div>
-            <div class="text-xs font-normal text-slate-500">Edit the code here</div>
+            <div class="text-xs font-normal text-slate-500">Theme colors from the original TextMate rules</div>
           </div>
           <textarea id="code" name="code" spellcheck="false" class="h-56 w-full resize-y rounded-md border-0 bg-gray-100 p-3 font-mono text-sm leading-6 text-black outline-none focus:ring-2 focus:ring-sky-500/30">{{ values.code }}</textarea>
         </section>
@@ -127,12 +134,16 @@
             </label>
 
             <label class="block">
+              <span class="mb-1 block text-xs font-bold text-[#333]">Line height</span>
+              <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700" name="line_height" type="number" min="1.1" max="2.2" step="0.05" value="{{ values.line_height }}">
+            </label>
+            <label class="block">
               <span class="mb-1 block text-xs font-bold text-[#333]">Font Size</span>
               <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="font_size" name="font_size" type="number" min="12" max="32" value="{{ values.font_size }}">
             </label>
 
             <label class="block">
-              <span class="mb-1 block text-xs font-bold text-[#333]">Speed</span>
+              <span class="mb-1 block text-xs font-bold text-[#333]">Keystroke delay (ms)</span>
               <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="speed_ms" name="speed_ms" type="number" min="4" max="120" step="1" value="{{ values.speed_ms }}">
             </label>
 
@@ -146,12 +157,12 @@
             </label>
 
             <label class="block">
-              <span class="mb-1 block text-xs font-bold text-[#333]">Line Pause</span>
+              <span class="mb-1 block text-xs font-bold text-[#333]">Line pause (ms)</span>
               <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="line_pause_ms" name="line_pause_ms" type="number" min="0" max="800" step="10" value="{{ values.line_pause_ms }}">
             </label>
 
             <label class="block">
-              <span class="mb-1 block text-xs font-bold text-[#333]">Start Delay</span>
+              <span class="mb-1 block text-xs font-bold text-[#333]">Opening hold (ms)</span>
               <input class="h-8 w-full rounded-md border-0 bg-gray-100 px-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500/30" id="start_delay_ms" name="start_delay_ms" type="number" min="0" max="2500" step="50" value="{{ values.start_delay_ms }}">
             </label>
 
@@ -220,7 +231,7 @@
           </div>
         </details>
 
-        <input type="hidden" name="line_height" value="{{ values.line_height }}">
+
         <input type="hidden" name="radius" value="{{ values.radius }}">
       </section>
     </div>

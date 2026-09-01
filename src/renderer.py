@@ -8,20 +8,16 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from pygments import highlight
-from pygments.formatters import HtmlFormatter
-from pygments.lexers import TextLexer, get_lexer_by_name
-from pygments.util import ClassNotFound
+import re
 
 from .gradients import gradient_css
 from .languages import (
     ICON_BY_EXTENSION,
     ICON_BY_FILENAME,
     ICON_BY_LANGUAGE,
-    LANGUAGE_LEXERS,
 )
-from .syntax_style import syntax_css
-from .themes import THEMES
+from .syntax_style import highlight_code, editor_theme
+from .typing_timeline import build_timeline
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -32,7 +28,7 @@ class RenderOptions:
     title: str = "code-typer-studio"
     language: str = "python"
     theme_name: str = "VS Code Dark+"
-    font_family: str = "Cascadia Code, Fira Code, Consolas, monospace"
+    font_family: str = "JetBrains Mono, Consolas, monospace"
     font_size: int = 18
     line_height: float = 1.55
     width: int = 1040
@@ -43,7 +39,7 @@ class RenderOptions:
     start_delay_ms: int = 350
     typing_mode: str = "character"
     show_line_numbers: bool = True
-    show_diff_gutter: bool = True
+    show_diff_gutter: bool = False
     show_window_chrome: bool = True
     autoplay: bool = True
     loop: bool = False
@@ -61,14 +57,11 @@ def make_render_options(**values: Any) -> RenderOptions:
 
 
 def build_typing_html(code: str, options: RenderOptions, standalone: bool = False) -> str:
-    theme = THEMES.get(options.theme_name, THEMES["VS Code Dark+"])
+    highlighted = highlight_code(code, options.language, options.theme_name, options.title)
+    theme = editor_theme(highlighted)
+    timeline = build_timeline(highlighted, options)
     gradient_enabled = _gradient_enabled(options)
-    code_lines = _highlighted_code_lines(
-        code=code,
-        language=options.language,
-        show_line_numbers=options.show_line_numbers,
-        show_diff_gutter=options.show_diff_gutter,
-    )
+    code_lines = _highlighted_code_lines(highlighted, options)
     data = json.dumps(
         {
             "speedMs": _clamp(options.speed_ms, 4, 250),
@@ -77,27 +70,37 @@ def build_typing_html(code: str, options: RenderOptions, standalone: bool = Fals
             "typingMode": _typing_mode(options.typing_mode),
             "autoplay": options.autoplay,
             "loop": options.loop,
+            "cursor": options.cursor,
+            "timeline": timeline,
+            "language": highlighted["language"],
+            "theme": highlighted["theme"],
+            "width": options.width,
+            "height": options.height,
         }
     )
 
-    document = HTML_TEMPLATE
+    document = (BASE_DIR / "src" / "typing_frame.html").read_text(encoding="utf-8")
     replacements = {
         "__TITLE__": html.escape(options.title or "code-typer-studio"),
         "__FILE_ICON_SRC__": html.escape(_file_icon_src(options.title, options.language), quote=True),
         "__FILE_ICON_ALT__": html.escape(_file_icon_alt(options.title, options.language), quote=True),
         "__CODE_LINES__": code_lines,
-        "__PYGMENTS_CSS__": syntax_css(options.theme_name),
-        "__OPTIONS_JSON__": html.escape(data, quote=False),
+        "__FONT_CSS__": _embedded_font_css(),
+        "__FRAME_CSS__": (BASE_DIR / "static" / "typing_frame.css").read_text(encoding="utf-8"),
+        "__FRAME_JS__": (BASE_DIR / "static" / "typing_frame.js").read_text(encoding="utf-8"),
+        "__LANGUAGE__": html.escape(highlighted["language"]),
+        "__THEME__": html.escape(options.theme_name),
+        "__NUMBER_WIDTH__": "54px" if options.show_line_numbers else "18px",
+        "__DIFF_WIDTH__": "24px" if options.show_diff_gutter else "0px",
+        "__OPTIONS_JSON__": data.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026"),
         "__PAGE_BG__": theme["page_bg"],
         "__EDITOR_BG__": theme["editor_bg"],
         "__CHROME_BG__": theme["chrome_bg"],
-        "__GUTTER_BG__": theme["gutter_bg"],
         "__TEXT__": theme["text"],
         "__MUTED__": theme["muted"],
         "__ACTIVE__": theme["active"],
         "__ACCENT__": theme["accent"],
         "__BORDER__": theme["border"],
-        "__SHADOW__": theme["shadow"],
         "__PLUS__": theme["plus"],
         "__FONT_FAMILY__": html.escape(options.font_family),
         "__FONT_SIZE__": f"{_clamp(options.font_size, 10, 42)}px",
@@ -107,18 +110,12 @@ def build_typing_html(code: str, options: RenderOptions, standalone: bool = Fals
         "__RADIUS__": f"{_clamp(options.radius, 0, 32)}px",
         "__CANVAS_FILL__": gradient_css(options.gradient_name) if gradient_enabled else theme["page_bg"],
         "__SHELL_PADDING__": f"{_canvas_padding(options)}px" if gradient_enabled else "0px",
-        "__CANVAS_RADIUS__": f"{_clamp(options.radius + 14, 14, 42)}px" if gradient_enabled else "0px",
-        "__PAGE_PADDING__": "20px" if gradient_enabled and standalone else "0px",
-        "__CARD_SHADOW__": "0 10px 24px rgba(15, 23, 42, 0.10)" if gradient_enabled else f"0 28px 80px {theme['shadow']}",
-        "__EMBEDDED_BORDER__": "1px solid var(--border)" if gradient_enabled else "0",
-        "__EMBEDDED_SHADOW__": "0 10px 24px rgba(15, 23, 42, 0.10)" if gradient_enabled else "none",
         "__CURSOR_CLASS__": f"cursor-{_cursor_class(options.cursor)}",
         "__CHROME_DISPLAY__": "flex" if options.show_window_chrome else "none",
-        "__VIEWPORT_HEIGHT__": "calc(100% - 42px)" if options.show_window_chrome else "100%",
     }
 
-    for token, value in replacements.items():
-        document = document.replace(token, value)
+    # One substitution pass prevents source text from being interpreted as template markers.
+    document = re.sub(r"__[A-Z_]+__", lambda match: replacements.get(match[0], match[0]), document)
 
     if standalone:
         if options.flush_frame:
@@ -143,49 +140,30 @@ def export_project_json(code: str, options: RenderOptions) -> str:
     )
 
 
-def _highlighted_code_lines(
-    code: str,
-    language: str,
-    show_line_numbers: bool,
-    show_diff_gutter: bool,
-) -> str:
-    lexer = _lexer(language)
-    highlighted = highlight(code or " ", lexer, HtmlFormatter(nowrap=True))
-    lines = highlighted.split("\n")
-    raw_count = max(1, len((code or " ").split("\n")))
-    if len(lines) > raw_count and lines[-1] == "":
-        lines = lines[:-1]
-    while len(lines) < raw_count:
-        lines.append("")
-
-    rendered = []
-    for index, line in enumerate(lines[:raw_count], start=1):
-        if line == "":
-            line = "&nbsp;"
-        line_number = str(index) if show_line_numbers else ""
-        diff_mark = "+" if show_diff_gutter else ""
-        rendered.append(
-            '<div class="code-line" data-line="{line_no}">'
-            '<span class="diff-mark">{diff}</span>'
-            '<span class="line-number">{number}</span>'
-            '<span class="line-content">{content}</span>'
-            "</div>".format(
-                line_no=index,
-                diff=html.escape(diff_mark),
-                number=html.escape(line_number),
-                content=line,
-            )
-        )
-    return "\n".join(rendered)
-
-
-def _lexer(language: str):
-    language_key = (language or "").strip().lower()
-    lexer_name = LANGUAGE_LEXERS.get(language_key, language_key or "text")
-    try:
-        return get_lexer_by_name(lexer_name)
-    except ClassNotFound:
-        return TextLexer()
+def _highlighted_code_lines(highlighted: dict, options: RenderOptions) -> str:
+    rendered, index = [], 0
+    for line_no, tokens in enumerate(highlighted["lines"]):
+        content = []
+        for token in tokens:
+            style = f'color:{token["color"]};'
+            flags = token["fontStyle"]
+            if flags & 1:
+                style += 'font-style:italic;'
+            if flags & 2:
+                style += 'font-weight:700;'
+            if flags & 4:
+                style += 'text-decoration:underline;'
+            glyphs = []
+            for char in token["content"]:
+                glyphs.append(f'<span class="glyph" data-index="{index}">{html.escape(char)}</span>')
+                index += 1
+            content.append(f'<span class="syntax-token" style="{style}">{"".join(glyphs)}</span>')
+        number = str(line_no + 1) if options.show_line_numbers else ''
+        diff = '+' if options.show_diff_gutter else ''
+        rendered.append(f'<div class="code-line" data-line="{line_no}"><span class="diff-mark">{diff}</span>'
+                        f'<span class="line-number">{number}</span><span class="line-content">{"".join(content)}</span></div>')
+        index += 1  # newline exists in the timeline, not as a visible DOM glyph
+    return ''.join(rendered)
 
 
 def _cursor_class(cursor: str) -> str:
@@ -195,7 +173,7 @@ def _cursor_class(cursor: str) -> str:
 
 
 def _typing_mode(mode: str) -> str:
-    if mode in {"word", "line"}:
+    if mode in {"word", "line", "token"}:
         return mode
     return "character"
 
@@ -255,552 +233,16 @@ def _clamp_float(value: float, low: float, high: float) -> float:
     return max(low, min(high, float(value)))
 
 
-HTML_TEMPLATE = """<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>__TITLE__</title>
-<style>
-__PYGMENTS_CSS__
 
-:root {
-  --page-bg: __PAGE_BG__;
-  --editor-bg: __EDITOR_BG__;
-  --chrome-bg: __CHROME_BG__;
-  --gutter-bg: __GUTTER_BG__;
-  --text: __TEXT__;
-  --muted: __MUTED__;
-  --active: __ACTIVE__;
-  --accent: __ACCENT__;
-  --border: __BORDER__;
-  --shadow: __SHADOW__;
-  --plus: __PLUS__;
-  --font-family: __FONT_FAMILY__;
-  --font-size: __FONT_SIZE__;
-  --line-height: __LINE_HEIGHT__;
-  --stage-width: __WIDTH__;
-  --stage-height: __HEIGHT__;
-  --radius: __RADIUS__;
-}
 
-* {
-  box-sizing: border-box;
-}
-
-.embedded-root {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  background: var(--page-bg);
-  padding: __PAGE_PADDING__;
-  color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-body.embedded {
-  display: block;
-  width: 100vw;
-  height: 100vh;
-  min-height: 0;
-  padding: 0;
-  overflow: hidden;
-  background: transparent;
-}
-
-.stage-shell {
-  width: min(100%, var(--stage-width));
-  height: var(--stage-height);
-  padding: __SHELL_PADDING__;
-  border-radius: __CANVAS_RADIUS__;
-  background: __CANVAS_FILL__;
-}
-
-body.embedded .stage-shell {
-  width: 100%;
-  height: 100%;
-}
-
-.editor-window {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--editor-bg);
-  box-shadow: __CARD_SHADOW__;
-}
-
-body.embedded .editor-window {
-  height: 100%;
-  border: __EMBEDDED_BORDER__;
-  box-shadow: __EMBEDDED_SHADOW__;
-}
-
-body.flush-frame {
-  width: var(--stage-width);
-  height: var(--stage-height);
-  min-height: var(--stage-height);
-  overflow: hidden;
-  background: transparent;
-}
-
-body.flush-frame .stage-shell {
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-body.flush-frame .editor-window {
-  height: 100%;
-  border: 0;
-  box-shadow: none;
-}
-
-.window-chrome {
-  display: __CHROME_DISPLAY__;
-  align-items: center;
-  gap: 10px;
-  height: 42px;
-  padding: 0 14px;
-  background: var(--chrome-bg);
-  border-bottom: 1px solid var(--border);
-}
-
-.window-dots {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 999px;
-}
-
-.dot.red { background: #ff5f56; }
-.dot.yellow { background: #ffbd2e; }
-.dot.green { background: #27c93f; }
-
-.file-title {
-  display: inline-flex;
-  min-width: 0;
-  align-items: center;
-  gap: 9px;
-  margin-left: 10px;
-  color: #d8d7df;
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.file-icon {
-  width: 19px;
-  height: 19px;
-  flex: 0 0 auto;
-  object-fit: contain;
-}
-
-.file-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.code-viewport {
-  height: __VIEWPORT_HEIGHT__;
-  overflow-x: auto;
-  overflow-y: auto;
-  background: var(--editor-bg);
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--muted) 70%, transparent) transparent;
-}
-
-.code-viewport::-webkit-scrollbar {
-  width: 8px;
-  height: 0;
-}
-
-.code-viewport::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.code-viewport::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--muted) 62%, transparent);
-}
-
-.code-content {
-  min-width: max-content;
-  padding: 18px 0 24px;
-  color: var(--text);
-  font-family: var(--font-family);
-  font-size: var(--font-size);
-  line-height: var(--line-height);
-  white-space: pre;
-}
-
-.code-line {
-  display: grid;
-  grid-template-columns: 28px 54px minmax(0, 1fr);
-  min-height: calc(var(--font-size) * var(--line-height));
-  transition: background-color 120ms ease;
-}
-
-.code-line.active {
-  background: var(--active);
-}
-
-.diff-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--plus);
-  background: var(--gutter-bg);
-  opacity: 0;
-  transition: opacity 120ms ease;
-  user-select: none;
-}
-
-.line-number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-right: 18px;
-  color: var(--muted);
-  background: var(--gutter-bg);
-  opacity: 0;
-  transition: opacity 120ms ease;
-  user-select: none;
-}
-
-.code-line.line-started .diff-mark,
-.code-line.line-started .line-number {
-  opacity: 1;
-}
-
-.line-content {
-  padding-left: 18px;
-  padding-right: 32px;
-}
-
-.typing-char {
-  opacity: 0;
-}
-
-.typing-char.visible {
-  opacity: 1;
-}
-
-.typing-cursor {
-  display: inline-block;
-  vertical-align: -0.12em;
-  background: var(--accent);
-  animation: blink 0.9s steps(2, start) infinite;
-}
-
-.cursor-bar .typing-cursor {
-  width: 2px;
-  height: 1.18em;
-  margin-left: 1px;
-}
-
-.cursor-block .typing-cursor {
-  width: 0.62em;
-  height: 1.08em;
-  margin-left: 1px;
-}
-
-.cursor-underline .typing-cursor {
-  width: 0.68em;
-  height: 0.14em;
-  margin-left: 1px;
-}
-
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  background: color-mix(in srgb, var(--chrome-bg) 92%, transparent);
-  border-top: 1px solid var(--border);
-}
-
-.controls button {
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 7px 10px;
-  background: var(--editor-bg);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.controls button:hover {
-  border-color: var(--accent);
-}
-
-.progress {
-  flex: 1;
-  height: 6px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--border);
-}
-
-.progress-fill {
-  width: 0%;
-  height: 100%;
-  background: var(--accent);
-  transition: width 80ms linear;
-}
-
-@keyframes blink {
-  50% { opacity: 0; }
-}
-</style>
-</head>
-<body>
-<main class="stage-shell">
-  <section class="editor-window __CURSOR_CLASS__" aria-label="Animated code preview">
-    <div class="window-chrome">
-      <span class="window-dots">
-        <span class="dot red"></span>
-        <span class="dot yellow"></span>
-        <span class="dot green"></span>
-      </span>
-      <span class="file-title">
-        <img class="file-icon" src="__FILE_ICON_SRC__" alt="__FILE_ICON_ALT__">
-        <span class="file-name">__TITLE__</span>
-      </span>
-    </div>
-    <div class="code-viewport" id="viewport">
-      <pre class="code-content" id="codeContent">__CODE_LINES__</pre>
-    </div>
-    <div class="controls">
-      <button type="button" id="playPause">Pause</button>
-      <button type="button" id="restart">Restart</button>
-      <div class="progress" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
-    </div>
-  </section>
-</main>
-<script type="application/json" id="typingOptions">__OPTIONS_JSON__</script>
-<script>
-(() => {
-  const options = JSON.parse(document.getElementById("typingOptions").textContent);
-  const root = document.getElementById("codeContent");
-  const viewport = document.getElementById("viewport");
-  const playPause = document.getElementById("playPause");
-  const restart = document.getElementById("restart");
-  const progressFill = document.getElementById("progressFill");
-  const cursor = document.createElement("span");
-
-  cursor.className = "typing-cursor";
-
-  function wrapTextNodes(node) {
-    const children = Array.from(node.childNodes);
-    for (const child of children) {
-      if (child.nodeType === Node.TEXT_NODE) {
-        const text = child.nodeValue || "";
-        const fragment = document.createDocumentFragment();
-        for (const char of text) {
-          const span = document.createElement("span");
-          span.className = "typing-char";
-          span.textContent = char;
-          fragment.appendChild(span);
-        }
-        child.replaceWith(fragment);
-      } else if (child.nodeType === Node.ELEMENT_NODE && !child.classList.contains("typing-cursor")) {
-        wrapTextNodes(child);
-      }
-    }
-  }
-
-  root.querySelectorAll(".line-content").forEach(wrapTextNodes);
-
-  const chars = Array.from(root.querySelectorAll(".line-content .typing-char"));
-  const steps = buildTypingSteps(chars, options.typingMode);
-  let stepIndex = 0;
-  let visibleCount = 0;
-  let timer = null;
-  let playing = false;
-
-  function charLine(char) {
-    return char.closest(".code-line");
-  }
-
-  function buildTypingSteps(characters, mode) {
-    if (mode === "line") {
-      return Array.from(root.querySelectorAll(".code-line"))
-        .map((line) => Array.from(line.querySelectorAll(".line-content .typing-char")))
-        .filter((lineChars) => lineChars.length > 0);
-    }
-
-    if (mode === "word") {
-      const wordSteps = [];
-      let group = [];
-      let hasWordChar = false;
-
-      characters.forEach((char, charIndex) => {
-        const text = char.textContent || "";
-        const isSpace = /\s/.test(text);
-        const next = characters[charIndex + 1];
-        const nextIsSpace = next ? /\s/.test(next.textContent || "") : false;
-        const nextIsSameLine = next ? charLine(next) === charLine(char) : false;
-
-        group.push(char);
-        hasWordChar = hasWordChar || !isSpace;
-
-        if (!next || !nextIsSameLine || (hasWordChar && isSpace && !nextIsSpace)) {
-          wordSteps.push(group);
-          group = [];
-          hasWordChar = false;
-        }
-      });
-
-      return wordSteps;
-    }
-
-    return characters.map((char) => [char]);
-  }
-
-  function setActiveLine(line) {
-    root.querySelectorAll(".code-line.active").forEach((item) => item.classList.remove("active"));
-    if (line) {
-      line.classList.add("active");
-      line.classList.add("line-started");
-    }
-  }
-
-  function keepCursorInView(line) {
-    const top = line ? line.offsetTop - viewport.clientHeight * 0.45 : viewport.scrollTop;
-    const left = cursor.offsetLeft - viewport.clientWidth * 0.72;
-    viewport.scrollTo({
-      top: Math.max(0, top),
-      left: Math.max(0, left),
-      behavior: "smooth",
-    });
-  }
-
-  function placeCursor() {
-    let activeLine = null;
-    if (chars.length === 0) {
-      root.appendChild(cursor);
-      keepCursorInView(null);
-      return;
-    }
-
-    if (visibleCount <= 0) {
-      chars[0].before(cursor);
-      activeLine = charLine(chars[0]);
-    } else {
-      const previous = chars[Math.min(visibleCount - 1, chars.length - 1)];
-      previous.after(cursor);
-      activeLine = charLine(previous);
-    }
-    setActiveLine(activeLine);
-    keepCursorInView(activeLine);
-  }
-
-  function updateProgress() {
-    const pct = chars.length === 0 ? 100 : Math.round((visibleCount / chars.length) * 100);
-    progressFill.style.width = `${pct}%`;
-  }
-
-  function nextDelay() {
-    const currentStep = steps[stepIndex - 1];
-    const nextStep = steps[stepIndex];
-    const current = currentStep ? currentStep[currentStep.length - 1] : null;
-    const next = nextStep ? nextStep[0] : null;
-    if (!current || !next) {
-      return options.speedMs;
-    }
-    return charLine(current) === charLine(next)
-      ? options.speedMs
-      : options.speedMs + options.linePauseMs;
-  }
-
-  function tick() {
-    if (!playing) {
-      return;
-    }
-
-    if (stepIndex >= steps.length) {
-      updateProgress();
-      if (options.loop) {
-        timer = window.setTimeout(resetAndPlay, 900);
-      } else {
-        playing = false;
-        playPause.textContent = "Play";
-      }
-      return;
-    }
-
-    const step = steps[stepIndex];
-    step.forEach((char) => char.classList.add("visible"));
-    visibleCount += step.length;
-    stepIndex += 1;
-    placeCursor();
-    updateProgress();
-    timer = window.setTimeout(tick, nextDelay());
-  }
-
-  function play() {
-    if (playing) {
-      return;
-    }
-    playing = true;
-    playPause.textContent = "Pause";
-    timer = window.setTimeout(tick, stepIndex === 0 ? options.startDelayMs : options.speedMs);
-  }
-
-  function pause() {
-    playing = false;
-    playPause.textContent = "Play";
-    window.clearTimeout(timer);
-  }
-
-  function reset() {
-    pause();
-    stepIndex = 0;
-    visibleCount = 0;
-    chars.forEach((char) => char.classList.remove("visible"));
-    root.querySelectorAll(".code-line.line-started").forEach((line) => line.classList.remove("line-started"));
-    placeCursor();
-    updateProgress();
-  }
-
-  function resetAndPlay() {
-    reset();
-    play();
-  }
-
-  playPause.addEventListener("click", () => {
-    if (playing) {
-      pause();
-    } else {
-      play();
-    }
-  });
-
-  restart.addEventListener("click", resetAndPlay);
-
-  reset();
-  if (options.autoplay) {
-    play();
-  }
-})();
-</script>
-</body>
-</html>
-"""
+@lru_cache(maxsize=1)
+def _embedded_font_css() -> str:
+    license_path = BASE_DIR / "static" / "fonts" / "OFL.txt"
+    license_text = license_path.read_text(encoding="utf-8").replace('*/', '* /')
+    rules = [f'/* Bundled JetBrains Mono font license:\n{license_text}\n*/']
+    for suffix, weight, style in [("Regular", 400, "normal"), ("Bold", 700, "normal"), ("Italic", 400, "italic"), ("BoldItalic", 700, "italic")]:
+        path = BASE_DIR / "static" / "fonts" / f"JetBrainsMono-{suffix}.ttf"
+        if path.exists():
+            data = base64.b64encode(path.read_bytes()).decode("ascii")
+            rules.append(f"@font-face{{font-family:'JetBrains Mono';font-weight:{weight};font-style:{style};src:url(data:font/ttf;base64,{data}) format('truetype');}}")
+    return "\n".join(rules)

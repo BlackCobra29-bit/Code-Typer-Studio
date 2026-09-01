@@ -19,7 +19,7 @@ Code Studio supports language-aware highlighting, file icons, multiple themes, c
 
 ### Terminal Studio
 
-Terminal Studio recreates a macOS Terminal window at a fixed 700×300 export size. Commands are typed word by word, followed by a one-second pause and immediate output. Errors, warnings, success messages, paths, strings, diagnostics, and ANSI colors receive terminal-style coloring.
+Terminal Studio recreates a macOS Terminal window at a fixed 700Ãƒâ€”300 export size. Commands are typed word by word, followed by a one-second pause and immediate output. Errors, warnings, success messages, paths, strings, diagnostics, and ANSI colors receive terminal-style coloring.
 
 ![Terminal Studio showing a colorized build command and output](docs/images/terminal-studio.png)
 
@@ -31,15 +31,15 @@ Terminal Studio recreates a macOS Terminal window at a fixed 700×300 export siz
 ### Code animation
 
 - Live typing preview with restart and playback controls
-- Character, word, and line typing modes
-- Syntax highlighting powered by Pygments
+- Character, syntax-token, word, and line typing modes
+- Authentic Shiki / TextMate syntax highlighting with the original editor theme rules
 - Built-in samples and a broad programming-language catalog
-- Automatic language and file-icon selection from the filename
+- Auto language detection from filename, then source; explicit language choices always win
 - Multiple editor themes and monospaced font choices
 - Adjustable typing speed, line pause, start delay, font size, and line height
 - Configurable line numbers, window chrome, autoplay, loop, cursor style, and frame size
-- Presets for 700×300, 16:9, 9:16, 1:1, 4:5, and 4:3 output
-- Standalone HTML, animated GIF, and reusable project JSON exports
+- Presets for 700Ãƒâ€”300, 16:9, 9:16, 1:1, 4:5, and 4:3 output
+- Offline standalone HTML, 60 fps MP4, 20 fps GIF, and reusable project JSON exports
 
 ### Terminal animation
 
@@ -50,7 +50,7 @@ Terminal Studio recreates a macOS Terminal window at a fixed 700×300 export siz
 - Semantic colors for errors, warnings, successful operations, paths, strings, numbers, and diagnostic markers
 - Support for standard ANSI foreground colors in pasted output
 - Optional looping
-- Standalone HTML and exact 700×300 animated GIF exports
+- Standalone HTML and exact 700Ãƒâ€”300 animated GIF exports
 
 ## How It Works
 
@@ -60,7 +60,7 @@ flowchart LR
     B --> C["Jinja2 live preview"]
     B --> D["HTML renderer"]
     B --> E["Pillow GIF renderer"]
-    F["Pygments syntax engine"] --> C
+    F["Shiki TextMate engine"] --> C
     F --> D
     F --> E
     G["Terminal semantic colorizer"] --> C
@@ -87,7 +87,8 @@ flowchart LR
 | **HTMX** | Partial-page navigation, history management, transitions, and live preview updates |
 | **Tailwind CSS** | Responsive layout and interface styling |
 | **CodeMirror 5** | Browser-based source-code editor |
-| **Pygments** | Language detection support and syntax token colors |
+| **Shiki + Node.js 20+** | Local TextMate grammars and unmodified editor theme rules |
+| **Pygments** | Language guessing only; never assigns syntax colors |
 | **Pillow** | Server-side animated GIF and screenshot rendering |
 | **Vanilla JavaScript** | Typing timelines, controls, custom selects, and terminal playback |
 
@@ -120,7 +121,10 @@ source .venv/bin/activate
 
 ```bash
 pip install -r requirements.txt
+npm ci
 ```
+
+Node.js 20 or newer is required. Shiki is pinned in `package-lock.json`; all grammars and themes run locally, and source code is never sent to a highlighting service.
 
 ### 4. Start the application
 
@@ -139,7 +143,7 @@ Open these pages:
 1. Open `/code-typer`, select a sample, or paste source code into the editor.
 2. Choose the language, theme, filename, typing mode, speed, and frame size.
 3. Review the live preview and use **Restart** to replay it.
-4. Export the result as HTML, GIF, or project JSON.
+4. Pause, replay, or scrub the timeline; export HTML, MP4, GIF, or project JSON.
 
 ## Using Terminal Studio
 
@@ -147,7 +151,7 @@ Open these pages:
 2. Set the terminal title and prompt.
 3. Enter the command to animate and the output to display.
 4. Adjust the word speed and enable looping when needed.
-5. Export the animation as standalone HTML or a 700×300 GIF.
+5. Export the animation as standalone HTML or a 700Ãƒâ€”300 GIF.
 
 Terminal output can be plain text or contain ANSI foreground sequences. Plain text is colorized automatically from recognizable message types; explicit ANSI colors take priority when present.
 
@@ -158,13 +162,15 @@ Terminal output can be plain text or contain ANSI foreground sequences. Plain te
 | `GET` | `/` | Landing page for both studios |
 | `GET` | `/code-typer` | Code Studio page |
 | `POST` | `/preview` | Refresh the code animation preview |
+| `POST` | `/highlight` | Resolve original theme tokens for the source editor |
+| `POST` | `/download/mp4` | Export a 60 fps code animation |
 | `POST` | `/download/html` | Export a standalone code animation |
 | `POST` | `/download/gif` | Export an animated code GIF |
 | `POST` | `/download/project` | Export code settings as JSON |
 | `GET` | `/terminal` | Terminal Studio page |
 | `POST` | `/terminal/preview` | Refresh the terminal animation preview |
 | `POST` | `/terminal/download/html` | Export a standalone terminal animation |
-| `POST` | `/terminal/download/gif` | Export a 700×300 terminal GIF |
+| `POST` | `/terminal/download/gif` | Export a 700Ãƒâ€”300 terminal GIF |
 
 ## Project Structure
 
@@ -176,11 +182,11 @@ Terminal output can be plain text or contain ANSI foreground sequences. Plain te
 |-- docs/
 |   `-- images/                    # README screenshots
 |-- src/
-|   |-- gif_exporter.py            # Code animation GIF renderer
+|   |-- gif_exporter.py            # Code animation GIF/MP4 renderer
 |   |-- languages.py               # Language metadata and icon mappings
 |   |-- renderer.py                # Code animation HTML renderer
 |   |-- samples.py                 # Built-in code examples
-|   |-- syntax_style.py            # Shared syntax color helpers
+|   |-- syntax_style.py            # Local Shiki worker bridge
 |   |-- terminal_renderer.py       # Terminal HTML/GIF renderer and colorizer
 |   `-- themes.py                  # Editor theme definitions
 |-- static/
@@ -212,3 +218,28 @@ Terminal output can be plain text or contain ANSI foreground sequences. Plain te
 ## Author
 
 Developed by [tesfahiwet truneh](https://www.linkedin.com/in/%F0%90%A9%A9%F0%90%A9%AA%F0%90%A9%B0%F0%90%A9%A2%F0%90%A9%BA%F0%90%A9%A5%F0%90%A9%A9-%F0%90%A9%A9%F0%90%A9%A7%F0%90%A9%A5%F0%90%A9%AC%F0%90%A9%A0-2a2139179/).
+
+
+## Highlighting and motion pipeline
+
+`src/highlight.mjs` runs a warm, local Shiki worker. Its TextMate grammars process the **complete** source before animation; `src/syntax_style.py` carries the exact token colors and italic/bold/underline flags to CodeMirror, HTML, and Pillow. It does not assign category palettes, recolor parentheses, or invent semantic colors. Theme background, foreground, caret, and gutter colors come from the same theme definition. Unsupported languages render as plain text. Missing Shiki/Node dependencies produce a visible 503 error instead of silently substituting an approximate palette.
+
+VS Code Dark+, Light+, Dracula, GitHub, One Dark Pro, and the other offered themes use Shiki's bundled upstream definitions. This matches **TextMate highlighting**, not language-server semantic highlighting or user-installed VS Code extensions. A theme may intentionally give different syntax categories the same color. Automatic detection is best-effort: filename wins over source guessing; select the language explicitly for ambiguous snippets.
+
+Older theme names map to real themes: Dracula Glow â†’ Dracula, Monokai Pro â†’ Monokai, Light Studio â†’ GitHub Light, Midnight Pro â†’ Night Owl, and Synthwave â†’ Synthwave '84. Other unknown legacy names fall back to Dark+.
+
+`src/typing_timeline.py` calculates deterministic reveal times, faster whitespace, punctuation pauses, line transitions, opening delay, and a 1.5 second closing hold. HTML uses requestAnimationFrame only as a clock; `window.codeTyping.seek(milliseconds)` renders any timeline position. Text is prelaid out, and the absolutely positioned cursor never shifts the source. Scroll motion is seekable, and preview size scales the actual export canvas instead of changing its line height. Reduced-motion users get the completed frame on initial load and can opt into playback.
+
+MP4 samples that timeline at **60 fps** and streams frames into H.264. It is no longer capped at 72 distinct frames. GIF samples at **20 fps**, uses a fixed palette, fits within 700Ã—700, and only loops if requested. MP4 supports up to 3 minutes; GIF supports up to 45 seconds. The app displays a clear error for longer requests; HTML has no duration limit. Source input is limited to 20,000 characters, 1,000 lines, and 2,000 characters per line to bound render resources.
+
+JetBrains Mono regular/bold/italic/bold italic are bundled under the SIL Open Font License (`static/fonts/OFL.txt`) and embedded in HTML exports. For the closest preview/video match, use this default family. Other font choices depend on fonts installed on the rendering host and can fall back to JetBrains Mono in video. HTML and Pillow share colors/timing but use different rasterizers; title-bar details, text antialiasing, and GIF palette quantization can differ. Playback controls are outside the scene and never appear in GIF/MP4.
+
+## Verification
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Coverage includes upstream Dark+/Dracula token colors, all offered themes/languages, automatic detection and manual overrides, multiline/Unicode/whitespace preservation, safe HTML serialization, deterministic timing, scrolling, and GIF loop behavior.
+
+Design benchmark: [Hyperframes Code Typing](https://hyperframes.heygen.com/catalog/blocks/code-typing). The studio keeps its own implementation and visual treatment. Theme engine reference: [Shiki](https://shiki.style/guide/install).
