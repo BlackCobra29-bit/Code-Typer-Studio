@@ -13,6 +13,7 @@ from src.typing_timeline import build_timeline
 from src.gif_exporter import FrameRenderer, build_typing_gif
 from src.diff_renderer import DiffOptions, build_diff_html, build_diff_model
 from src.diff_exporter import DiffFrameRenderer
+from main import CODE_ASPECT_RATIOS, _apply_code_aspect_ratio
 
 
 class GlyphReader(HTMLParser):
@@ -138,6 +139,21 @@ class CodeDiffTests(unittest.TestCase):
         self.assertIn('<title>Code Diff Animation</title>',output)
         self.assertNotIn('file-title',output)
 
+    def test_blank_line_replaced_by_code_is_an_addition_only(self):
+        options = DiffOptions(language='python',theme_name='VS Code Dark+')
+        model = build_diff_model('first\n\nlast','first\n@decorator\nlast',options)
+        changed = [row for row in model['rows'] if row['kind'] != 'equal']
+        self.assertEqual([(row['kind'],row['silentDelete']) for row in changed],
+                         [('delete',True),('insert',False)])
+        self.assertEqual(model['additions'],1)
+        self.assertEqual(model['deletions'],0)
+        output = build_diff_html('first\n\nlast','first\n@decorator\nlast',options)
+        self.assertIn('row-delete row-silent-delete',output)
+        self.assertIn('"silentDelete": true',output)
+        silent_row = re.search(r'<div class="diff-row row-delete row-silent-delete".*?</div>',output)
+        self.assertIsNotNone(silent_row)
+        self.assertNotIn('>−<',silent_row.group(0))
+
     def test_diff_frame_renderer_covers_change_and_resolved_states(self):
         options = DiffOptions(width=700,height=400,font_size=17,canvas_padding=48,background_style='gradient')
         renderer = DiffFrameRenderer('x = 1\nprint(x)','x = 2\nprint(x)',options)
@@ -145,6 +161,29 @@ class CodeDiffTests(unittest.TestCase):
         resolved = renderer.frame(renderer.timeline['duration'])
         self.assertEqual(changing.size,(700,400))
         self.assertNotEqual(changing.tobytes(),resolved.tobytes())
+
+    def test_diff_uses_the_same_code_metrics_as_typing(self):
+        font = 'JetBrains Mono, Consolas, monospace'
+        typing = FrameRenderer('value = 20',RenderOptions(
+            font_family=font,font_size=20,line_height=1.55,width=700,height=400,
+        ))
+        diff = DiffFrameRenderer('value = 20','value = 20',DiffOptions(
+            font_family=font,font_size=20,line_height=1.55,width=700,height=400,
+        ))
+        self.assertEqual(diff.content_x,typing.content_x)
+        self.assertEqual(diff.row_h,typing.lh)
+        self.assertEqual(diff.number_font.size,typing.number_font.size)
+        self.assertEqual(diff.fonts[0].getlength('value = 20'),typing.fonts[0].getlength('value = 20'))
+
+
+class AspectRatioTests(unittest.TestCase):
+    def test_code_studios_offer_only_landscape_and_square_pixel_sizes(self):
+        self.assertEqual(
+            [(item['value'],item['width'],item['height']) for item in CODE_ASPECT_RATIOS],
+            [('16_9',1280,720),('1_1',1080,1080)],
+        )
+        self.assertEqual(_apply_code_aspect_ratio('1_1'),(1080,1080,'1_1'))
+        self.assertEqual(_apply_code_aspect_ratio('unsupported'),(1280,720,'16_9'))
 
 
 if __name__ == '__main__': unittest.main()

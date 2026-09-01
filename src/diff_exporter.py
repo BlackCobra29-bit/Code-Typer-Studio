@@ -32,9 +32,9 @@ class DiffFrameRenderer:
         self.chrome = 44 if o.show_window_chrome else 0
         self.vw, self.vh = self.ew-2, self.eh-self.chrome-2
         self.size, self.row_h = o.font_size, o.font_size*o.line_height
-        self.content_x = 72 if o.show_line_numbers else 30
+        self.content_x = (54 if o.show_line_numbers else 18) + 16
         self.fonts = [_font(o.font_family,o.font_size,flag) for flag in range(4)]
-        self.number_font = _font(o.font_family,o.font_size*.78)
+        self.number_font = _font(o.font_family,o.font_size*.82)
         self.badge_font = _font("JetBrains Mono",8)
         self.strips = [self._line_strip(row["tokens"]) for row in self.rows]
         self.first_changed = next((i for i,row in enumerate(self.rows) if row["kind"] != "equal"),0)
@@ -81,9 +81,10 @@ class DiffFrameRenderer:
             deletion=self._progress(time,at,t["transition"]*.72) if row["kind"]=="delete" else 0
             insertion=self._progress(time,t["insertStart"]+max(0,row["changeOrder"])*72,t["transition"]*.78) if row["kind"]=="insert" else 0
             height=self.row_h;opacity=intro;translate=(1-intro)*4
-            if row["kind"]=="delete":height*=1-resolve;opacity*=1-resolve*.96;translate=-resolve*5
+            if row["kind"]=="delete" and row["silentDelete"]:height*=1-deletion;opacity*=1-deletion;translate=-deletion*3
+            elif row["kind"]=="delete":height*=1-resolve;opacity*=1-resolve*.96;translate=-resolve*5
             elif row["kind"]=="insert":height*=insertion;opacity=insertion;translate=(1-insertion)*-5
-            strength=deletion*(1-resolve) if row["kind"]=="delete" else insertion*(1-resolve*.90) if row["kind"]=="insert" else 0
+            strength=0 if row["silentDelete"] else deletion*(1-resolve) if row["kind"]=="delete" else insertion*(1-resolve*.90) if row["kind"]=="insert" else 0
             states.append((height,opacity,translate,deletion,insertion,strength))
         return states,resolve
 
@@ -105,11 +106,12 @@ class DiffFrameRenderer:
                 draw.rectangle((0,0,3,self.row_h),fill=color);draw.text((17,self.row_h/2),"−" if row["kind"]=="delete" else "+",font=self.number_font,fill=color,anchor="mm")
             number=row["newNumber"] if row["kind"]=="insert" and insertion>0 else row["oldNumber"] if resolve<.5 else row["newNumber"]
             if o.show_line_numbers and number:
-                draw.text((64,self.row_h/2),str(number),font=self.number_font,fill=(*_rgb(self.theme["muted"],self.bg),round(122*opacity)),anchor="rm")
+                ascent,descent=self.number_font.getmetrics();baseline=(self.row_h-ascent-descent)/2+ascent
+                draw.text((self.content_x-26,baseline),str(number),font=self.number_font,fill=(*_rgb(self.theme["muted"],self.bg),round(122*opacity)),anchor="rs")
             token_alpha=opacity*(1-deletion*.20 if row["kind"]=="delete" else 1)
             shown=strip.copy();alpha=np.asarray(shown.getchannel("A")).copy();shown.putalpha(Image.fromarray((alpha*token_alpha).astype("uint8")))
             row_image.paste(shown,(self.content_x,0),shown)
-            if row["kind"]=="delete" and deletion>0:
+            if row["kind"]=="delete" and not row["silentDelete"] and deletion>0:
                 strike_end=self.content_x+strip.width*deletion
                 draw.line((self.content_x,self.row_h/2,strike_end,self.row_h/2),fill=(255,123,114,round(255*deletion*(1-resolve))),width=2)
             crop=row_image.crop((0,0,self.vw,min(row_image.height,visible_h)))

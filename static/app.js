@@ -63,20 +63,17 @@ function updateHeroControls() {
 }
 
 function updateCanvasControls() {
-  const isDisplay = aspectRatio?.value === "display";
   const gradientEnabled = backgroundStyle?.value === "gradient";
   if (gradientName) {
-    gradientName.disabled = !gradientEnabled || isDisplay;
+    gradientName.disabled = !gradientEnabled;
   }
   if (canvasPadding) {
-    canvasPadding.disabled = !gradientEnabled || isDisplay;
+    canvasPadding.disabled = !gradientEnabled;
   }
   if (canvasHelp) {
-    canvasHelp.textContent = isDisplay
-      ? "Display mode exports the editor flush at 700x300, so canvas gradients are ignored."
-      : gradientEnabled
-        ? "Gradient canvas adds a padded social-style backdrop behind the editor card."
-        : "Switch to Gradient to wrap the editor in a social-style export canvas.";
+    canvasHelp.textContent = gradientEnabled
+      ? "Gradient canvas adds a padded backdrop to 16:9 and 1:1 exports."
+      : "Switch to Gradient to wrap the editor in a polished export canvas.";
   }
 }
 
@@ -393,7 +390,7 @@ previewScrubber.addEventListener('click', event => {
 });
 
 function fitPreview() {
-  const ratios = { display:[700,300], '16_9':[1280,720], '9_16':[720,1280], '1_1':[1080,1080], '4_5':[1080,1350], '4_3':[1024,768] };
+  const ratios = { '16_9':[1280,720], '1_1':[1080,1080] };
   const [w,h] = ratios[aspectRatio.value] || ratios['16_9'];
   const panel = document.getElementById('preview-panel');
   panel.style.aspectRatio = `${w}/${h}`;

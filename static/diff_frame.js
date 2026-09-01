@@ -19,23 +19,24 @@
     editor.style.transform=`translate3d(0,${(1-entrance)*14}px,0) scale(${.992+entrance*.008})`;
     editor.style.opacity=String(.76+entrance*.24);
     rows.forEach((element,index)=>{
-      const row=options.rows[index], kind=row.kind;
+      const row=options.rows[index], kind=row.kind, silentDelete=Boolean(row.silentDelete);
       const intro=row.originalOrder<0?0:progress(elapsed,timeline.startDelay+row.originalOrder*timeline.lineStagger,260);
       const changeAt=timeline.changeStart+Math.max(0,row.changeOrder)*72;
       const deletion=kind==='delete'?progress(elapsed,changeAt,timeline.transition*.72):0;
       const insertion=kind==='insert'?progress(elapsed,timeline.insertStart+Math.max(0,row.changeOrder)*72,timeline.transition*.78):0;
       let height=rowHeight,opacity=intro,translate=(1-intro)*4;
-      if(kind==='delete'){height=rowHeight*(1-resolve);opacity=intro*(1-resolve*.96);translate=-resolve*5;}
+      if(kind==='delete'&&silentDelete){height=rowHeight*(1-deletion);opacity=intro*(1-deletion);translate=-deletion*3;}
+      else if(kind==='delete'){height=rowHeight*(1-resolve);opacity=intro*(1-resolve*.96);translate=-resolve*5;}
       if(kind==='insert'){height=rowHeight*insertion;opacity=insertion;translate=(1-insertion)*-5;}
       element.style.height=`${Math.max(0,height)}px`;
       element.style.opacity=String(clamp(opacity));
       element.style.transform=`translate3d(0,${translate}px,0)`;
-      const strength=kind==='delete'?deletion*(1-resolve):insertion*(1-resolve*.90);
+      const strength=kind==='delete'?(silentDelete?0:deletion*(1-resolve)):insertion*(1-resolve*.90);
       element.style.backgroundColor=kind==='delete'?`rgba(248,81,73,${.18*strength})`:kind==='insert'?`rgba(46,160,67,${.18*strength})`:'transparent';
       element.querySelector('.change-rail').style.opacity=String(strength);
       element.querySelector('.diff-marker').style.opacity=String(strength);
-      if(kind==='delete'){
-        const strike=element.querySelector('.delete-strike'),text=element.querySelector('.code-text');strike.style.width=`${Math.max(12,text.scrollWidth-32)}px`;strike.style.transform=`scaleX(${deletion})`;strike.style.opacity=String(deletion*(1-resolve));
+      if(kind==='delete'&&!silentDelete){
+        const strike=element.querySelector('.delete-strike'),text=element.querySelector('.code-text');strike.style.width=`${Math.max(12,text.scrollWidth-48)}px`;strike.style.transform=`scaleX(${deletion})`;strike.style.opacity=String(deletion*(1-resolve));
         element.querySelector('.code-text').style.opacity=String(1-deletion*.20);
       }
       const oldNumber=element.querySelector('.old-number'),newNumber=element.querySelector('.new-number');

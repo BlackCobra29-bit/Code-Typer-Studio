@@ -96,7 +96,7 @@ function initCodeDiffStudio(){
   document.getElementById('diff-preview-restart').addEventListener('click',()=>playback('restart'),{signal});
   document.getElementById('diff-replay-action').addEventListener('click',()=>playback('restart'),{signal});
   const scrubber=document.getElementById('diff-preview-scrubber');scrubber.addEventListener('input',()=>playback('seek',{progress:Number(scrubber.value)/1000}),{signal});
-  function fit(){const ratios={display:[700,300],'16_9':[1280,720],'9_16':[720,1280],'1_1':[1080,1080],'4_5':[1080,1350],'4_3':[1024,768]};const [w,h]=ratios[document.getElementById('diff-aspect-ratio').value]||ratios['16_9'];const panel=document.getElementById('diff-preview-panel');panel.style.aspectRatio=`${w}/${h}`;document.querySelector('#diff-form .studio-preview-wrap').style.maxWidth=`${Math.min(920,580*w/h)}px`}
+  function fit(){const ratios={'16_9':[1280,720],'1_1':[1080,1080]};const [w,h]=ratios[document.getElementById('diff-aspect-ratio').value]||ratios['16_9'];const panel=document.getElementById('diff-preview-panel');panel.style.aspectRatio=`${w}/${h}`;document.querySelector('#diff-form .studio-preview-wrap').style.maxWidth=`${Math.min(920,580*w/h)}px`}
   form.querySelectorAll('input,select,textarea').forEach(control=>{control.addEventListener('input',()=>schedule(control.matches('textarea')?650:280),{signal});control.addEventListener('change',()=>{fit();schedule(100)},{signal})});
   editors.forEach(editor=>editor.on('change',()=>{syncAreas();schedule(650)}));
   form.addEventListener('htmx:afterSwap',event=>{if(event.detail.target.id==='diff-preview-panel')status.textContent='Ready'},{signal});

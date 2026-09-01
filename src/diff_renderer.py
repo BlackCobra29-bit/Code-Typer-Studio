@@ -54,7 +54,7 @@ def build_diff_model(original: str, revised: str, options: DiffOptions) -> dict:
     matcher = SequenceMatcher(None, before_text, after_text, autojunk=False)
     rows: list[dict] = []
 
-    def append(kind: str, old_index: int | None, new_index: int | None):
+    def append(kind: str, old_index: int | None, new_index: int | None, silent_delete: bool = False):
         source = before if kind == "delete" else after
         source_index = old_index if kind == "delete" else new_index
         rows.append({
@@ -64,6 +64,7 @@ def build_diff_model(original: str, revised: str, options: DiffOptions) -> dict:
             "newNumber": new_index + 1 if new_index is not None else None,
             "originalOrder": old_index if old_index is not None else -1,
             "finalOrder": new_index if new_index is not None else -1,
+            "silentDelete": bool(silent_delete),
             "tokens": source["lines"][source_index] if source_index is not None else [],
         })
 
@@ -78,8 +79,14 @@ def build_diff_model(original: str, revised: str, options: DiffOptions) -> dict:
             for new_index in range(j1, j2):
                 append("insert", None, new_index)
         else:
+            has_nonempty_insert = any(after_text[index].strip() for index in range(j1, j2))
             for old_index in range(i1, i2):
-                append("delete", old_index, None)
+                append(
+                    "delete",
+                    old_index,
+                    None,
+                    silent_delete=has_nonempty_insert and not before_text[old_index].strip(),
+                )
             for new_index in range(j1, j2):
                 append("insert", None, new_index)
 
@@ -98,7 +105,7 @@ def build_diff_model(original: str, revised: str, options: DiffOptions) -> dict:
         "theme": editor_theme(after),
         "highlight": after,
         "additions": sum(row["kind"] == "insert" for row in rows),
-        "deletions": sum(row["kind"] == "delete" for row in rows),
+        "deletions": sum(row["kind"] == "delete" and not row["silentDelete"] for row in rows),
     }
 
 
@@ -109,7 +116,7 @@ def build_diff_html(original: str, revised: str, options: DiffOptions, standalon
     rows = "".join(_row_html(row, options) for row in model["rows"])
     payload = json.dumps({
         "timeline": model["timeline"],
-        "rows": [{key: row[key] for key in ("index", "kind", "originalOrder", "finalOrder", "changeOrder")} for row in model["rows"]],
+        "rows": [{key: row[key] for key in ("index", "kind", "originalOrder", "finalOrder", "changeOrder", "silentDelete")} for row in model["rows"]],
         "width": options.width,
         "height": options.height,
         "fontSize": options.font_size,
@@ -136,6 +143,7 @@ def build_diff_html(original: str, revised: str, options: DiffOptions, standalon
         "__FONT_FAMILY__": html.escape(options.font_family),
         "__FONT_SIZE__": f"{_clamp(options.font_size, 10, 42)}px",
         "__LINE_HEIGHT__": str(_clamp_float(options.line_height, 1.1, 2.3)),
+        "__NUMBER_WIDTH__": "54px" if options.show_line_numbers else "18px",
         "__WIDTH__": f"{_clamp(options.width, 420, 2200)}px",
         "__HEIGHT__": f"{_clamp(options.height, 260, 1400)}px",
         "__RADIUS__": f"{_clamp(options.radius, 0, 32)}px",
@@ -191,9 +199,11 @@ def _row_html(row: dict, options: DiffOptions) -> str:
         tokens.append(f'<span class="syntax-token" style="{style}">{html.escape(token["content"])}</span>')
     old_number = row["oldNumber"] if options.show_line_numbers and row["oldNumber"] else ""
     new_number = row["newNumber"] if options.show_line_numbers and row["newNumber"] else ""
-    marker = {"delete": "−", "insert": "+"}.get(row["kind"], "")
+    silent_delete = row["silentDelete"]
+    marker = "" if silent_delete else {"delete": "−", "insert": "+"}.get(row["kind"], "")
+    row_class = f'diff-row row-{row["kind"]}' + (" row-silent-delete" if silent_delete else "")
     return (
-        f'<div class="diff-row row-{row["kind"]}" data-index="{row["index"]}" data-kind="{row["kind"]}">'
+        f'<div class="{row_class}" data-index="{row["index"]}" data-kind="{row["kind"]}">'
         f'<span class="change-rail"></span><span class="diff-marker">{marker}</span>'
         f'<span class="line-number old-number">{old_number}</span><span class="line-number new-number">{new_number}</span>'
         f'<span class="code-text">{"".join(tokens)}</span><span class="delete-strike"></span></div>'

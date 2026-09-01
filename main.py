@@ -37,7 +37,15 @@ FONTS = [
     "Menlo, Monaco, Consolas, monospace",
 ]
 
-ASPECT_RATIOS = [
+CODE_ASPECT_RATIOS = [
+    {"value": "16_9", "label": "16:9 - 1280x720 px", "width": 1280, "height": 720},
+    {"value": "1_1", "label": "1:1 - 1080x1080 px", "width": 1080, "height": 1080},
+]
+CODE_ASPECT_RATIO_DIMENSIONS = {
+    item["value"]: (item["width"], item["height"])
+    for item in CODE_ASPECT_RATIOS
+}
+TERMINAL_ASPECT_RATIOS = [
     {"value": "display", "label": "Display - 700x300", "width": 700, "height": 300},
     {"value": "16_9", "label": "16:9 - 1280x720", "width": 1280, "height": 720},
     {"value": "9_16", "label": "9:16 - 720x1280", "width": 720, "height": 1280},
@@ -45,10 +53,9 @@ ASPECT_RATIOS = [
     {"value": "4_5", "label": "4:5 - 1080x1350", "width": 1080, "height": 1350},
     {"value": "4_3", "label": "4:3 - 1024x768", "width": 1024, "height": 768},
 ]
-ASPECT_RATIO_DIMENSIONS = {
+TERMINAL_ASPECT_RATIO_DIMENSIONS = {
     item["value"]: (item["width"], item["height"])
-    for item in ASPECT_RATIOS
-    if item["width"] is not None and item["height"] is not None
+    for item in TERMINAL_ASPECT_RATIOS
 }
 TYPING_MODES = [
     {"value": "character", "label": "Character"},
@@ -125,7 +132,7 @@ async def code_typer(request: Request) -> HTMLResponse:
             "themes": list(THEME_NAMES),
             "gradients": gradient_catalog(),
             "fonts": FONTS,
-            "aspect_ratios": ASPECT_RATIOS,
+            "aspect_ratios": CODE_ASPECT_RATIOS,
             "typing_modes": TYPING_MODES,
             "samples": SAMPLES,
             "samples_json": json.dumps(SAMPLES),
@@ -146,7 +153,7 @@ async def terminal(request: Request) -> HTMLResponse:
         {
             "values": values,
             "gradients": gradient_catalog(),
-            "aspect_ratios": ASPECT_RATIOS,
+            "aspect_ratios": TERMINAL_ASPECT_RATIOS,
             "preview_html": build_terminal_html(_terminal_options(values)),
             "current_year": date.today().year,
         },
@@ -162,7 +169,7 @@ async def code_diff(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "code_diff.html", {
         "values": values, "languages": LANGUAGES, "language_catalog": LANGUAGE_CATALOG,
         "themes": list(THEME_NAMES), "fonts": FONTS, "gradients": gradient_catalog(),
-        "aspect_ratios": ASPECT_RATIOS, "preview_html": preview_html,
+        "aspect_ratios": CODE_ASPECT_RATIOS, "preview_html": preview_html,
         "current_year": date.today().year,
     })
 
@@ -395,9 +402,7 @@ async def _diff_payload_from_request(request: Request) -> dict[str, Any]:
         if len(source) > 20000 or source.count("\n") > 1000 or any(len(line) > 2000 for line in source.split("\n")):
             raise HTTPException(422, "Use up to 20,000 characters, 1,000 lines, and 2,000 characters per line in each version.")
     aspect_ratio = str(form.get("aspect_ratio", DEFAULT_ASPECT_RATIO))
-    width, height, aspect_ratio = _apply_aspect_ratio(
-        aspect_ratio, _int(form.get("width"),1280,520,1600), _int(form.get("height"),720,320,1400)
-    )
+    width, height, aspect_ratio = _apply_code_aspect_ratio(aspect_ratio)
     return {
         "language": str(form.get("language","python")),
         "theme_name": str(form.get("theme_name","VS Code Dark+")), "original_code": original,
@@ -418,16 +423,14 @@ def _diff_options_from_payload(values: dict[str, Any]):
             "language","theme_name","font_family","font_size","line_height","width","height","radius",
             "transition_ms","hold_ms","start_delay_ms","background_style","gradient_name","canvas_padding",
             "show_line_numbers","show_window_chrome","autoplay","loop"
-        )}, flush_frame=values["aspect_ratio"] == "display"
+        )}
     )
 
 
 async def _terminal_payload_from_request(request: Request) -> dict[str, Any]:
     form = await request.form()
     aspect_ratio = str(form.get("aspect_ratio", "display"))
-    width = _int(form.get("width"), 700, 520, 1600)
-    height = _int(form.get("height"), 300, 300, 1400)
-    width, height, aspect_ratio = _apply_aspect_ratio(aspect_ratio, width, height)
+    width, height, aspect_ratio = _apply_terminal_aspect_ratio(aspect_ratio)
     return {
         "title": str(form.get("title", "Terminal"))[:80],
         "prompt": str(form.get("prompt", "%"))[:120],
@@ -455,9 +458,7 @@ async def _payload_from_request(request: Request) -> dict[str, Any]:
     if len(source) > 20000 or source.count("\n") > 1000 or any(len(line) > 2000 for line in source.split("\n")):
         raise HTTPException(422, "Use up to 20,000 characters, 1,000 lines, and 2,000 characters per line.")
     aspect_ratio = str(form.get("aspect_ratio", DEFAULT_ASPECT_RATIO))
-    width = _int(form.get("width"), 1280, 520, 1600)
-    height = _int(form.get("height"), 720, 320, 1400)
-    width, height, aspect_ratio = _apply_aspect_ratio(aspect_ratio, width, height)
+    width, height, aspect_ratio = _apply_code_aspect_ratio(aspect_ratio)
 
     return {
         "language": str(form.get("language", "python")),
@@ -510,7 +511,6 @@ def _options_from_payload(values: dict[str, Any]):
         autoplay=values["autoplay"],
         loop=values["loop"],
         cursor=values["cursor"],
-        flush_frame=values["aspect_ratio"] == "display",
     )
 
 
@@ -536,10 +536,18 @@ def _background_style(value: Any) -> str:
     return "none"
 
 
-def _apply_aspect_ratio(aspect_ratio: str, width: int, height: int) -> tuple[int, int, str]:
-    dimensions = ASPECT_RATIO_DIMENSIONS.get(aspect_ratio)
+def _apply_code_aspect_ratio(aspect_ratio: str) -> tuple[int, int, str]:
+    dimensions = CODE_ASPECT_RATIO_DIMENSIONS.get(aspect_ratio)
     if dimensions is None:
-        fallback = ASPECT_RATIO_DIMENSIONS[DEFAULT_ASPECT_RATIO]
+        fallback = CODE_ASPECT_RATIO_DIMENSIONS[DEFAULT_ASPECT_RATIO]
+        return fallback[0], fallback[1], DEFAULT_ASPECT_RATIO
+    return dimensions[0], dimensions[1], aspect_ratio
+
+
+def _apply_terminal_aspect_ratio(aspect_ratio: str) -> tuple[int, int, str]:
+    dimensions = TERMINAL_ASPECT_RATIO_DIMENSIONS.get(aspect_ratio)
+    if dimensions is None:
+        fallback = TERMINAL_ASPECT_RATIO_DIMENSIONS[DEFAULT_ASPECT_RATIO]
         return fallback[0], fallback[1], DEFAULT_ASPECT_RATIO
     return dimensions[0], dimensions[1], aspect_ratio
 
