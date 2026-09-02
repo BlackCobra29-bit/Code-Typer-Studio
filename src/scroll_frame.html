@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Code Scroll Animation</title>
+<style>
+__FONT_CSS__
+:root { --page-bg:__PAGE_BG__; --editor-bg:__EDITOR_BG__; --chrome-bg:__CHROME_BG__; --text:__TEXT__; --muted:__MUTED__; --accent:__ACCENT__; --focus:__FOCUS__; --font-family:__FONT_FAMILY__; --font-size:__FONT_SIZE__; --line-height:__LINE_HEIGHT__; --numbers:__NUMBER_WIDTH__; --radius:__RADIUS__; --stage-width:__WIDTH__; --stage-height:__HEIGHT__; --canvas-fill:__CANVAS_FILL__; --canvas-padding:__CANVAS_PADDING__; }
+__FRAME_CSS__
+.window-chrome { display:__CHROME_DISPLAY__; }
+</style>
+</head>
+<body>
+<main class="stage-shell __STAGE_CLASS__" id="stage">
+  <section class="editor-window" id="editorWindow" aria-label="Animated code scroll preview">
+    <header class="window-chrome">
+      <span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="focus-badge" id="focusBadge">Scanning</span>
+    </header>
+    <div class="code-viewport" id="viewport">
+      <div class="scroll-content" id="scrollContent"><span class="highlight-box" id="highlightBox" aria-hidden="true"></span>__CODE_LINES__</div>
+    </div>
+  </section>
+</main>
+<nav class="transport" aria-label="Animation playback">
+  <button id="playPause" type="button">Play</button><button id="restart" type="button">↺</button>
+  <input id="scrubber" type="range" min="0" max="1000" value="0" aria-label="Animation timeline">
+  <output id="timecode">0.0s</output>
+</nav>
+<script type="application/json" id="scrollOptions">__PAYLOAD__</script>
+<script>__FRAME_JS__</script>
+</body>
+</html>

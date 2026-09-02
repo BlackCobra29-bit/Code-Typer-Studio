@@ -25,7 +25,7 @@ Terminal Studio recreates a macOS Terminal window at a fixed 700Ãƒâ€”300 
 
 ## Features
 
-- Smooth HTMX navigation between Home, Code Typer, and Terminal Studio without full-page reloads
+- Smooth HTMX navigation between Home, Code Typer, Code Diff, Code Scroll, and Terminal Studio without full-page reloads
 - Browser history, URL updates, loading feedback, focus management, and view transitions for page swaps
 
 ### Code animation
@@ -38,8 +38,16 @@ Terminal Studio recreates a macOS Terminal window at a fixed 700Ãƒâ€”300 
 - Multiple editor themes and monospaced font choices
 - Adjustable typing speed, line pause, start delay, font size, and line height
 - Configurable line numbers, window chrome, autoplay, loop, cursor style, and frame size
-- Presets for 700Ãƒâ€”300, 16:9, 9:16, 1:1, 4:5, and 4:3 output
+- Consistent 16:9 (1280x720) and 1:1 (1080x1080) code-video formats
 - Offline standalone HTML, 60 fps MP4, 20 fps GIF, and reusable project JSON exports
+
+### Code scroll animation
+
+- Smooth camera movement that centers a selected line or line range
+- Theme-derived focus fill and rail with surrounding-code dimming
+- Real TextMate syntax colors in both the source editor and rendered animation
+- Adjustable scroll duration, opening delay, focus hold, typography, canvas, and frame format
+- Matching live preview, standalone HTML, GIF, MP4, and project JSON exports
 
 ### Terminal animation
 
@@ -136,6 +144,8 @@ Open these pages:
 
 - Home: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 - Code Studio: [http://127.0.0.1:8000/code-typer](http://127.0.0.1:8000/code-typer)
+- Code Diff: [http://127.0.0.1:8000/code-diff](http://127.0.0.1:8000/code-diff)
+- Code Scroll: [http://127.0.0.1:8000/code-scroll](http://127.0.0.1:8000/code-scroll)
 - Terminal Studio: [http://127.0.0.1:8000/terminal](http://127.0.0.1:8000/terminal)
 
 ## Using Code Studio
@@ -144,6 +154,13 @@ Open these pages:
 2. Choose the language, theme, filename, typing mode, speed, and frame size.
 3. Review the live preview and use **Restart** to replay it.
 4. Pause, replay, or scrub the timeline; export HTML, MP4, GIF, or project JSON.
+
+## Using Code Scroll
+
+1. Open `/code-scroll` and paste a long source file.
+2. Select the language, theme, and first and last lines to highlight.
+3. Tune the scroll duration, focus hold, typography, and frame format.
+4. Replay or scrub the centered focus animation, then export HTML, MP4, GIF, or project JSON.
 
 ## Using Terminal Studio
 
@@ -159,7 +176,7 @@ Terminal output can be plain text or contain ANSI foreground sequences. Plain te
 
 | Method | Route | Description |
 | --- | --- | --- |
-| `GET` | `/` | Landing page for both studios |
+| `GET` | `/` | Landing page for all studios |
 | `GET` | `/code-typer` | Code Studio page |
 | `POST` | `/preview` | Refresh the code animation preview |
 | `POST` | `/highlight` | Resolve original theme tokens for the source editor |
@@ -167,6 +184,15 @@ Terminal output can be plain text or contain ANSI foreground sequences. Plain te
 | `POST` | `/download/html` | Export a standalone code animation |
 | `POST` | `/download/gif` | Export an animated code GIF |
 | `POST` | `/download/project` | Export code settings as JSON |
+| `GET` | `/code-diff` | Code Diff studio page |
+| `POST` | `/code-diff/preview` | Refresh the animated diff preview |
+| `POST` | `/code-diff/download/{format}` | Export diff HTML, GIF, MP4, or project JSON |
+| `GET` | `/code-scroll` | Code Scroll studio page |
+| `POST` | `/code-scroll/preview` | Refresh the scroll-to-line preview |
+| `POST` | `/code-scroll/download/html` | Export a standalone scroll animation |
+| `POST` | `/code-scroll/download/gif` | Export the scroll animation as GIF |
+| `POST` | `/code-scroll/download/mp4` | Export the scroll animation as MP4 |
+| `POST` | `/code-scroll/download/project` | Export scroll settings as JSON |
 | `GET` | `/terminal` | Terminal Studio page |
 | `POST` | `/terminal/preview` | Refresh the terminal animation preview |
 | `POST` | `/terminal/download/html` | Export a standalone terminal animation |
@@ -183,6 +209,10 @@ Terminal output can be plain text or contain ANSI foreground sequences. Plain te
 |   `-- images/                    # README screenshots
 |-- src/
 |   |-- gif_exporter.py            # Code animation GIF/MP4 renderer
+|   |-- diff_renderer.py           # Code Diff model and HTML renderer
+|   |-- diff_exporter.py           # Code Diff GIF/MP4 renderer
+|   |-- scroll_renderer.py         # Code Scroll model and HTML renderer
+|   |-- scroll_exporter.py         # Code Scroll GIF/MP4 renderer
 |   |-- languages.py               # Language metadata and icon mappings
 |   |-- renderer.py                # Code animation HTML renderer
 |   |-- samples.py                 # Built-in code examples
@@ -191,6 +221,8 @@ Terminal output can be plain text or contain ANSI foreground sequences. Plain te
 |   `-- themes.py                  # Editor theme definitions
 |-- static/
 |   |-- app.js                     # Code Studio interactions
+|   |-- diff_studio.js             # Code Diff interactions
+|   |-- scroll_studio.js           # Code Scroll interactions
 |   |-- code_studio.css            # Shared editor and transition styles
 |   |-- shared.js                  # Shared navigation, history, and modal interactions
 |   |-- terminal.js                # Terminal Studio interactions
@@ -198,6 +230,8 @@ Terminal output can be plain text or contain ANSI foreground sequences. Plain te
 `-- templates/
     |-- index.html                 # Landing page
     |-- code_typer.html            # Code Studio page
+    |-- code_diff.html             # Code Diff studio page
+    |-- code_scroll.html           # Code Scroll studio page
     |-- terminal.html              # Terminal Studio page
     |-- _base.html                 # Shared application shell and HTMX target
     |-- _head_assets.html          # Shared styles and browser dependencies

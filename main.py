@@ -14,6 +14,8 @@ from fastapi.templating import Jinja2Templates
 from src.gif_exporter import build_typing_gif, build_typing_mp4, ExportLimitError
 from src.diff_exporter import build_diff_gif, build_diff_mp4
 from src.diff_renderer import build_diff_html, export_diff_project, make_diff_options
+from src.scroll_exporter import build_scroll_gif, build_scroll_mp4
+from src.scroll_renderer import build_scroll_html, export_scroll_project, make_scroll_options
 from src.gradients import gradient_catalog
 from src.languages import LANGUAGE_CATALOG, LANGUAGES
 from src.renderer import build_typing_html, export_project_json, make_render_options
@@ -84,6 +86,29 @@ def post_list(request):
 DEFAULT_DIFF_REVISED = DEFAULT_DIFF_ORIGINAL.replace(
     "posts = Post.objects.all()", 'posts = Post.objects.select_related("author")'
 )
+DEFAULT_SCROLL_CODE = '''import { api } from "./api"
+import { logger } from "./logger"
+
+const MAX_ATTEMPTS = 3
+
+export async function loadProfile(userId) {
+  const client = api.withTimeout(2500)
+  let lastError = null
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const response = await client.get(`/users/${userId}`)
+      if (!response.ok) throw new Error(`status ${response.status}`)
+      return response.data
+    } catch (error) {
+      lastError = error
+      logger.warn(`attempt ${attempt} failed`)
+    }
+    await delay(attempt * 200)
+  }
+
+  throw lastError
+}'''
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -219,6 +244,57 @@ async def download_diff_mp4(request: Request) -> Response:
     )
     return Response(data, media_type="video/mp4",
                     headers={"Content-Disposition": 'attachment; filename="code-diff-animation.mp4"'})
+
+
+@app.get("/code-scroll", response_class=HTMLResponse)
+async def code_scroll(request: Request) -> HTMLResponse:
+    values = _default_scroll_payload()
+    preview_html = await run_in_threadpool(build_scroll_html, values["code"], _scroll_options_from_payload(values))
+    return templates.TemplateResponse(request, "code_scroll.html", {
+        "values": values, "languages": LANGUAGES, "language_catalog": LANGUAGE_CATALOG,
+        "themes": list(THEME_NAMES), "fonts": FONTS, "gradients": gradient_catalog(),
+        "aspect_ratios": CODE_ASPECT_RATIOS, "preview_html": preview_html,
+        "current_year": date.today().year,
+    })
+
+
+@app.post("/code-scroll/preview", response_class=HTMLResponse)
+async def code_scroll_preview(request: Request) -> HTMLResponse:
+    values = await _scroll_payload_from_request(request)
+    preview_html = await run_in_threadpool(build_scroll_html, values["code"], _scroll_options_from_payload(values))
+    return templates.TemplateResponse(request, "_scroll_preview.html", {"preview_html": preview_html})
+
+
+@app.post("/code-scroll/download/html")
+async def download_scroll_html(request: Request) -> Response:
+    values = await _scroll_payload_from_request(request)
+    document = await run_in_threadpool(build_scroll_html, values["code"], _scroll_options_from_payload(values), True)
+    return Response(document, media_type="text/html",
+                    headers={"Content-Disposition": 'attachment; filename="code-scroll-animation.html"'})
+
+
+@app.post("/code-scroll/download/project")
+async def download_scroll_project(request: Request) -> Response:
+    values = await _scroll_payload_from_request(request)
+    document = export_scroll_project(values["code"], _scroll_options_from_payload(values))
+    return Response(document, media_type="application/json",
+                    headers={"Content-Disposition": 'attachment; filename="code-scroll-project.json"'})
+
+
+@app.post("/code-scroll/download/gif")
+async def download_scroll_gif(request: Request) -> Response:
+    values = await _scroll_payload_from_request(request)
+    data = await run_in_threadpool(build_scroll_gif, values["code"], _scroll_options_from_payload(values))
+    return Response(data, media_type="image/gif",
+                    headers={"Content-Disposition": 'attachment; filename="code-scroll-animation.gif"'})
+
+
+@app.post("/code-scroll/download/mp4")
+async def download_scroll_mp4(request: Request) -> Response:
+    values = await _scroll_payload_from_request(request)
+    data = await run_in_threadpool(build_scroll_mp4, values["code"], _scroll_options_from_payload(values))
+    return Response(data, media_type="video/mp4",
+                    headers={"Content-Disposition": 'attachment; filename="code-scroll-animation.mp4"'})
 
 
 @app.post("/terminal/preview", response_class=HTMLResponse)
@@ -394,6 +470,18 @@ def _default_diff_payload() -> dict[str, Any]:
     }
 
 
+def _default_scroll_payload() -> dict[str, Any]:
+    return {
+        "language": "javascript", "theme_name": "VS Code Dark+", "code": DEFAULT_SCROLL_CODE,
+        "font_family": FONTS[0], "font_size": 20, "line_height": 1.55,
+        "aspect_ratio": "16_9", "width": 1280, "height": 720, "radius": 14,
+        "target_start": 15, "target_end": 17, "scroll_ms": 1700,
+        "hold_ms": 1500, "start_delay_ms": 900,
+        "background_style": "gradient", "gradient_name": "midnight", "canvas_padding": 92,
+        "show_line_numbers": True, "show_window_chrome": True, "autoplay": True, "loop": False,
+    }
+
+
 async def _diff_payload_from_request(request: Request) -> dict[str, Any]:
     form = await request.form()
     original = normalize_code(str(form.get("original_code", "")))
@@ -425,6 +513,38 @@ def _diff_options_from_payload(values: dict[str, Any]):
             "show_line_numbers","show_window_chrome","autoplay","loop"
         )}
     )
+
+
+async def _scroll_payload_from_request(request: Request) -> dict[str, Any]:
+    form = await request.form()
+    source = normalize_code(str(form.get("code", "")))
+    if len(source) > 20000 or source.count("\n") > 1000 or any(len(line) > 2000 for line in source.split("\n")):
+        raise HTTPException(422, "Use up to 20,000 characters, 1,000 lines, and 2,000 characters per line.")
+    line_count = max(1, source.count("\n") + 1)
+    start = _int(form.get("target_start"), 1, 1, line_count)
+    end = _int(form.get("target_end"), start, 1, line_count)
+    start, end = min(start, end), max(start, end)
+    aspect_ratio = str(form.get("aspect_ratio", DEFAULT_ASPECT_RATIO))
+    width, height, aspect_ratio = _apply_code_aspect_ratio(aspect_ratio)
+    return {
+        "language": str(form.get("language", "javascript")), "theme_name": str(form.get("theme_name", "VS Code Dark+")),
+        "code": source, "font_family": str(form.get("font_family")) if form.get("font_family") in FONTS else FONTS[0],
+        "font_size": _int(form.get("font_size"), 20, 12, 32), "line_height": _float(form.get("line_height"), 1.55, 1.1, 2.2),
+        "aspect_ratio": aspect_ratio, "width": width, "height": height, "radius": _int(form.get("radius"), 14, 0, 28),
+        "target_start": start, "target_end": end, "scroll_ms": _int(form.get("scroll_ms"), 1700, 450, 3200),
+        "hold_ms": _int(form.get("hold_ms"), 1500, 300, 3000), "start_delay_ms": _int(form.get("start_delay_ms"), 900, 250, 3000),
+        "background_style": _background_style(form.get("background_style")), "gradient_name": str(form.get("gradient_name", "midnight")),
+        "canvas_padding": _int(form.get("canvas_padding"), 92, 18, 180), "show_line_numbers": _bool(form.get("show_line_numbers")),
+        "show_window_chrome": _bool(form.get("show_window_chrome")), "autoplay": _bool(form.get("autoplay")), "loop": _bool(form.get("loop")),
+    }
+
+
+def _scroll_options_from_payload(values: dict[str, Any]):
+    return make_scroll_options(**{key: values[key] for key in (
+        "language", "theme_name", "font_family", "font_size", "line_height", "width", "height", "radius",
+        "target_start", "target_end", "scroll_ms", "hold_ms", "start_delay_ms", "background_style",
+        "gradient_name", "canvas_padding", "show_line_numbers", "show_window_chrome", "autoplay", "loop",
+    )})
 
 
 async def _terminal_payload_from_request(request: Request) -> dict[str, Any]:

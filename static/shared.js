@@ -89,6 +89,7 @@ const pageTitles = {
   "/": "Code Typer Studio",
   "/code-typer": "Code Typer — Code Typer Studio",
   "/code-diff": "Code Diff — Code Typer Studio",
+  "/code-scroll": "Code Scroll — Code Typer Studio",
   "/terminal": "Terminal Simulator — Code Typer Studio",
 };
 
