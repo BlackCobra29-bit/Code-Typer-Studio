@@ -428,7 +428,7 @@ def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
         "typing_mode": "character",
         "background_style": "gradient",
         "gradient_name": "midnight",
-        "canvas_padding": 92,
+        "canvas_padding": 50,
         "show_line_numbers": True,
         "show_diff_gutter": False,
         "show_window_chrome": True,
@@ -464,7 +464,7 @@ def _default_diff_payload() -> dict[str, Any]:
         "font_family": FONTS[0], "font_size": 20, "line_height": 1.55,
         "aspect_ratio": "16_9", "width": 1280, "height": 720, "radius": 14,
         "transition_ms": 650, "hold_ms": 1050, "start_delay_ms": 550,
-        "background_style": "gradient", "gradient_name": "midnight", "canvas_padding": 92,
+        "background_style": "gradient", "gradient_name": "midnight", "canvas_padding": 50,
         "show_line_numbers": True, "show_window_chrome": True, "autoplay": True,
         "loop": False,
     }
@@ -477,7 +477,7 @@ def _default_scroll_payload() -> dict[str, Any]:
         "aspect_ratio": "16_9", "width": 1280, "height": 720, "radius": 14,
         "target_start": 15, "target_end": 17, "scroll_ms": 1700,
         "hold_ms": 1500, "start_delay_ms": 900,
-        "background_style": "gradient", "gradient_name": "midnight", "canvas_padding": 92,
+        "background_style": "gradient", "gradient_name": "midnight", "canvas_padding": 50,
         "show_line_numbers": True, "show_window_chrome": True, "autoplay": True, "loop": False,
     }
 
