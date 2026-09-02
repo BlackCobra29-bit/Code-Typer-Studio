@@ -160,7 +160,7 @@ def build_diff_html(original: str, revised: str, options: DiffOptions, standalon
 
 
 def export_diff_project(original: str, revised: str, options: DiffOptions) -> str:
-    return json.dumps({"app": "Code Typer Studio", "type": "code-diff", "version": 1,
+    return json.dumps({"app": "Coduxum", "type": "code-diff", "version": 1,
                        "original": normalize_code(original), "revised": normalize_code(revised),
                        "options": asdict(options)}, indent=2)
 

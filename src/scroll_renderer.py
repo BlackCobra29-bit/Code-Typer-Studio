@@ -125,7 +125,7 @@ def export_scroll_project(code: str, options: ScrollOptions) -> str:
     values = asdict(options)
     values["target_start"], values["target_end"] = model["targetStart"], model["targetEnd"]
     return json.dumps({
-        "app": "Code Typer Studio", "type": "code-scroll", "version": 1,
+        "app": "Coduxum", "type": "code-scroll", "version": 1,
         "code": model["code"], "options": values,
     }, indent=2)
 

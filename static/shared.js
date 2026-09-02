@@ -86,11 +86,11 @@ document.addEventListener("keydown", (event) => {
 });
 
 const pageTitles = {
-  "/": "Code Typer Studio",
-  "/code-typer": "Code Typer — Code Typer Studio",
-  "/code-diff": "Code Diff — Code Typer Studio",
-  "/code-scroll": "Code Scroll — Code Typer Studio",
-  "/terminal": "Terminal Simulator — Code Typer Studio",
+  "/": "Coduxum",
+  "/code-typer": "Code Typer — Coduxum",
+  "/code-diff": "Code Diff — Coduxum",
+  "/code-scroll": "Code Scroll — Coduxum",
+  "/terminal": "Terminal Simulator — Coduxum",
 };
 
 function normalizedPagePath(pathname = window.location.pathname) {
@@ -122,7 +122,7 @@ function updatePageTitle(responseText = "") {
       return;
     }
   }
-  document.title = pageTitles[normalizedPagePath()] || "Code Typer Studio";
+  document.title = pageTitles[normalizedPagePath()] || "Coduxum";
 }
 
 if (window.htmx) {

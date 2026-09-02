@@ -1,5 +1,5 @@
 {% extends "_base.html" %}
-{% block title %}Code Diff — Code Typer Studio{% endblock %}
+{% block title %}Code Diff — Coduxum{% endblock %}
 {% block content %}
 <form id="diff-form" class="min-h-full bg-slate-50" method="post">
   <button id="diff-preview-trigger" class="hidden" type="button" hx-post="/code-diff/preview" hx-include="#diff-form" hx-target="#diff-preview-panel" hx-swap="innerHTML" hx-trigger="refreshPreview" hx-sync="this:replace"></button>

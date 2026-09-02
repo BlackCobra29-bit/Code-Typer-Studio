@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Code Typer Studio{% endblock %}</title>
+  <title>{% block title %}Coduxum{% endblock %}</title>
   {% include "_head_assets.html" %}
+  {% block head %}{% endblock %}
 </head>
 <body class="min-h-screen overflow-x-hidden font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Oxygen-Sans,Ubuntu,Cantarell,'Helvetica_Neue',sans-serif] text-slate-900 antialiased">
   <div class="flex min-h-screen flex-col">
@@ -15,10 +16,11 @@
     <main id="page-content" class="flex-1 {% block page_class %}bg-white{% endblock %}" hx-history-elt>
       {% block content %}{% endblock %}
     </main>
-    <footer class="border-t border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-500">&copy; {{ current_year }} Code Typer Studio</footer>
+    <footer class="border-t border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-500">&copy; {{ current_year }} Coduxum</footer>
     {% include "_shared_modals.html" %}
     {% include "_buy_me_coffee.html" %}
   </div>
   {% include "_scripts.html" %}
+  {% block scripts %}{% endblock %}
 </body>
 </html>

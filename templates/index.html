@@ -1,58 +1,193 @@
 {% extends "_base.html" %}
 
-{% block title %}Code Typer Studio{% endblock %}
+{% block title %}Coduxum — Motion for code{% endblock %}
+
+{% block head %}
+<meta name="description" content="Create polished code typing, diff, scroll, and terminal animations for programming videos.">
+{% endblock %}
+
+{% block page_class %}home-page bg-[#f2f0eb] text-slate-950{% endblock %}
 
 {% block content %}
-<div
-  class="mx-auto flex min-h-full w-full max-w-[1265px] flex-col items-center justify-center px-4 py-16 text-center sm:px-6"
-  hx-boost="true"
-  hx-target="#page-content"
-  hx-select="#page-content"
-  hx-swap="outerHTML transition:true show:top"
-  hx-push-url="true"
-  hx-indicator="#page-loading"
-  hx-sync="#page-content:replace"
->
-  <section class="w-full max-w-[1040px]" aria-labelledby="hero-title">
-    <p class="mb-4 text-sm font-bold uppercase tracking-[0.24em] text-slate-500">Code Typer Studio</p>
-    <h1 id="hero-title" class="mx-auto max-w-[1000px] text-5xl font-black leading-[0.98] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
-      Turn ideas into
-      <span class="relative inline-block text-blue-600">
-        smooth developer animations
-        <svg class="absolute -bottom-2 left-0 h-4 w-full text-blue-300 sm:-bottom-3 sm:h-5" viewBox="0 0 420 34" fill="none" aria-hidden="true" preserveAspectRatio="none">
-          <path d="M8 24C74 5 143 4 211 15C279 26 351 28 412 12" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
-        </svg>
-      </span>
-      in seconds.
-    </h1>
-    <p class="mx-auto mt-8 max-w-[760px] text-lg font-medium leading-8 text-slate-700 sm:text-xl">Create syntax-highlighted typing, cinematic code changes, guided code walkthroughs, or realistic macOS terminal animations from four focused studios.</p>
-    <div class="mt-10 flex flex-wrap items-center justify-center gap-3">
-      <a class="inline-flex h-11 items-center justify-center rounded-full bg-blue-600 px-7 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/25 sm:text-base" href="/code-typer">Open Code Typer</a>
-      <a class="inline-flex h-11 items-center justify-center rounded-full bg-emerald-600 px-7 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:-translate-y-0.5 hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/25 sm:text-base" href="/code-diff">Open Code Diff</a>
-      <a class="inline-flex h-11 items-center justify-center rounded-full bg-sky-600 px-7 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition hover:-translate-y-0.5 hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-500/25 sm:text-base" href="/code-scroll">Open Code Scroll</a>
-      <a class="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-7 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20 sm:text-base" href="/terminal">Open Terminal Studio</a>
+<div class="home-surface" hx-boost="true" hx-target="#page-content" hx-select="#page-content" hx-swap="outerHTML transition:true show:top" hx-push-url="true" hx-indicator="#page-loading" hx-sync="#page-content:replace">
+  <section class="home-hero" aria-labelledby="home-title">
+    <div class="relative z-10 mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1320px] items-start justify-center px-5 pb-20 pt-16 text-center sm:px-8 sm:pb-24 sm:pt-20">
+      <div class="mx-auto flex w-full max-w-[920px] flex-col items-center">
+        <div class="home-eyebrow">
+          <span class="home-eyebrow__pulse" aria-hidden="true"></span>
+          Motion studio for developers
+          <span class="home-eyebrow__version">04 scenes</span>
+        </div>
+
+        <h1 id="home-title" class="mt-8 max-w-[900px] text-balance text-[clamp(3.8rem,8.2vw,7.8rem)] font-medium leading-[0.88] tracking-[-0.072em] text-slate-950">
+          Make code<br>
+          <span class="home-title-accent home-title-brush">
+            <span>worth watching.</span>
+            <svg viewBox="0 0 900 46" fill="none" preserveAspectRatio="none" aria-hidden="true">
+              <path class="home-title-brush__path home-title-brush__path--soft" pathLength="1" d="M12 28C139 13 241 30 355 24C477 17 573 11 693 23C773 31 827 29 888 18"/>
+              <path class="home-title-brush__path" pathLength="1" d="M16 31C148 17 249 34 361 27C483 20 579 15 696 26C774 33 832 31 884 22"/>
+            </svg>
+          </span>
+        </h1>
+
+        <p class="mt-8 max-w-[680px] text-pretty text-base font-normal leading-7 text-slate-600 sm:text-lg sm:leading-8">
+          Design studio-grade code animations with real syntax themes, intentional motion, and export-ready output—without opening a timeline editor.
+        </p>
+
+        <div class="mt-10 flex flex-row items-center justify-center gap-2 sm:gap-3">
+          <a class="home-button home-button--primary" href="/code-typer">
+            Start creating
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="home-button home-button--quiet" href="#scenes">
+            Explore scenes
+            <span class="font-mono text-[10px] text-slate-500">↓</span>
+          </a>
+        </div>
+
+        <dl class="mt-12 grid w-full max-w-[660px] grid-cols-3 border-y border-slate-900/10 py-5 text-center">
+          <div>
+            <dt class="font-mono text-xl font-medium tracking-[-0.04em] text-slate-950 sm:text-2xl">52</dt>
+            <dd class="mt-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Languages</dd>
+          </div>
+          <div class="border-x border-slate-900/10">
+            <dt class="font-mono text-xl font-medium tracking-[-0.04em] text-slate-950 sm:text-2xl">18</dt>
+            <dd class="mt-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Editor themes</dd>
+          </div>
+          <div>
+            <dt class="font-mono text-xl font-medium tracking-[-0.04em] text-slate-950 sm:text-2xl">04</dt>
+            <dd class="mt-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Export formats</dd>
+          </div>
+        </dl>
+      </div>
+
     </div>
-    <div class="mx-auto mt-14 grid max-w-5xl gap-4 text-left sm:grid-cols-2 lg:grid-cols-4">
-      <a class="group rounded-2xl border border-blue-100 bg-blue-50 p-5 transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-100/60" href="/code-typer">
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Code Typer</p>
-        <h2 class="mt-2 text-xl font-black text-slate-950">Animate source code</h2>
-        <p class="mt-2 text-sm leading-6 text-slate-600">Choose a language, theme, typing mode, speed, cursor, and frame size, then export HTML, JSON, or GIF.</p>
-      </a>
-      <a class="group rounded-2xl border border-emerald-100 bg-emerald-50 p-5 transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-100/60" href="/code-diff">
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Code Diff</p>
-        <h2 class="mt-2 text-xl font-black text-slate-950">Animate the exact edit</h2>
-        <p class="mt-2 text-sm leading-6 text-slate-600">Show removed lines, inserted replacements, smooth line movement, and the accepted result.</p>
-      </a>
-      <a class="group rounded-2xl border border-sky-100 bg-sky-50 p-5 transition hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-sky-100/60" href="/code-scroll">
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-sky-600">Code Scroll</p>
-        <h2 class="mt-2 text-xl font-black text-slate-950">Focus a line or range</h2>
-        <p class="mt-2 text-sm leading-6 text-slate-600">Move through a long file, center the target, dim surrounding code, and highlight the important lines.</p>
-      </a>
-      <a class="group rounded-2xl border border-violet-100 bg-violet-50 p-5 transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-100/60" href="/terminal">
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-violet-600">Terminal Studio</p>
-        <h2 class="mt-2 text-xl font-black text-slate-950">Animate terminal output</h2>
-        <p class="mt-2 text-sm leading-6 text-slate-600">Type commands word by word and reveal semantically colorized output in a macOS-style terminal.</p>
-      </a>
+  </section>
+
+  <section id="scenes" class="home-section border-t border-slate-900/10" aria-labelledby="scenes-title">
+    <div class="mx-auto w-full max-w-[1320px] px-5 py-24 sm:px-8 sm:py-32">
+      <div class="grid gap-8 border-b border-slate-900/10 pb-12 lg:grid-cols-[0.65fr_1.35fr] lg:items-end">
+        <div><p class="home-kicker">Scene library / 04</p><h2 id="scenes-title" class="mt-5 text-4xl font-medium tracking-[-0.055em] text-slate-950 sm:text-5xl">One visual language.<br>Four ways to explain.</h2></div>
+        <p class="max-w-xl text-base leading-7 text-slate-600 lg:justify-self-end">Every studio shares the same themes, typography, canvas controls, and export workflow, so a full video feels designed as one system.</p>
+      </div>
+
+      <div class="home-scene-grid mt-8">
+        <a class="home-scene-card home-scene-card--typing" href="/code-typer">
+          <div class="home-scene-card__top"><span>01</span><span>CODE TYPING</span><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5m0 0H7m8 0v8" stroke="currentColor" stroke-width="1.5"/></svg></div>
+          <div class="home-scene-card__visual" aria-hidden="true">
+            <div class="scene-demo scene-demo--typing">
+              <div class="scene-demo__bar"><span class="scene-demo__lights"><i></i><i></i><i></i></span><span>TYPESCRIPT</span></div>
+              <div class="scene-demo__viewport">
+                <div class="scene-code-line"><span class="scene-code-no">1</span><code><span class="kw">async function</span> <span class="fn">loadUser</span><span class="plain">(</span><span class="param">id</span><span class="plain">:</span> <span class="type">string</span><span class="plain">) {</span></code></div>
+                <div class="scene-code-line"><span class="scene-code-no">2</span><code>&nbsp;&nbsp;<span class="kw">const</span> <span class="prop">response</span> <span class="plain">=</span> <span class="kw">await</span> <span class="fn">api</span><span class="plain">.</span><span class="fn">get</span><span class="plain">(</span></code></div>
+                <div class="scene-code-line"><span class="scene-code-no">3</span><code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">`/users/${id}`</span></code></div>
+                <div class="scene-code-line"><span class="scene-code-no">4</span><code>&nbsp;&nbsp;<span class="plain">)</span></code></div>
+                <div class="scene-code-line"><span class="scene-code-no">5</span><code>&nbsp;&nbsp;<span class="kw">return</span> <span class="plain">response.data</span></code></div>
+                <div class="scene-code-line"><span class="scene-code-no">6</span><code><span class="plain">}</span></code></div>
+              </div>
+            </div>
+          </div>
+          <div><h3>Write code into the frame.</h3><p>Natural rhythm, accurate syntax color, and a cursor that moves with intent.</p></div>
+        </a>
+        <a class="home-scene-card home-scene-card--diff" href="/code-diff">
+          <div class="home-scene-card__top"><span>02</span><span>CODE DIFF</span><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5m0 0H7m8 0v8" stroke="currentColor" stroke-width="1.5"/></svg></div>
+          <div class="home-scene-card__visual" aria-hidden="true">
+            <div class="scene-demo scene-demo--diff">
+              <div class="scene-demo__bar"><span class="scene-demo__lights"><i></i><i></i><i></i></span><span>PYTHON</span></div>
+              <div class="scene-demo__viewport">
+                <div class="scene-code-line"><span class="scene-diff-mark"></span><span class="scene-code-no">8</span><code><span class="kw">def</span> <span class="fn">get_posts</span><span class="plain">():</span></code></div>
+                <div class="scene-code-line scene-diff-remove"><span class="scene-diff-mark">−</span><span class="scene-code-no">9</span><code>&nbsp;&nbsp;<span class="kw">return</span> <span class="plain">Post.objects.</span><span class="fn">all</span><span class="plain">()</span></code></div>
+                <div class="scene-code-line scene-diff-add"><span class="scene-diff-mark">+</span><span class="scene-code-no">9</span><code>&nbsp;&nbsp;<span class="kw">return</span> <span class="plain">Post.objects.</span><span class="fn">select_related</span><span class="plain">(</span></code></div>
+                <div class="scene-code-line scene-diff-add scene-diff-add--last"><span class="scene-diff-mark">+</span><span class="scene-code-no">10</span><code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">&quot;author&quot;</span><span class="plain">)</span></code></div>
+                <div class="scene-code-line"><span class="scene-diff-mark"></span><span class="scene-code-no">11</span><code></code></div>
+              </div>
+            </div>
+          </div>
+          <div><h3>Make every change obvious.</h3><p>Remove, replace, and insert lines with clean motion and readable context.</p></div>
+        </a>
+        <a class="home-scene-card home-scene-card--scroll" href="/code-scroll">
+          <div class="home-scene-card__top"><span>03</span><span>CODE SCROLL</span><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5m0 0H7m8 0v8" stroke="currentColor" stroke-width="1.5"/></svg></div>
+          <div class="home-scene-card__visual" aria-hidden="true">
+            <div class="scene-demo scene-demo--scroll">
+              <div class="scene-demo__bar"><span class="scene-demo__lights"><i></i><i></i><i></i></span><span>JAVASCRIPT</span></div>
+              <div class="scene-demo__viewport scene-scroll-viewport">
+                <div class="scene-scroll-track">
+                  <div class="scene-code-line scene-scroll-muted"><span class="scene-code-no">12</span><code><span class="kw">const</span> <span class="prop">session</span> <span class="plain">= await resolveSession()</span></code></div>
+                  <div class="scene-code-line scene-scroll-muted"><span class="scene-code-no">13</span><code><span class="kw">if</span> <span class="plain">(!session) throw unauthorized()</span></code></div>
+                  <div class="scene-code-line scene-scroll-muted"><span class="scene-code-no">14</span><code></code></div>
+                  <div class="scene-code-line scene-scroll-focus"><span class="scene-code-no">15</span><code><span class="kw">const</span> <span class="prop">checkout</span> <span class="plain">= await</span></code></div>
+                  <div class="scene-code-line scene-scroll-focus"><span class="scene-code-no">16</span><code>&nbsp;&nbsp;<span class="fn">createCheckout</span><span class="plain">({</span></code></div>
+                  <div class="scene-code-line scene-scroll-focus"><span class="scene-code-no">17</span><code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">currency</span><span class="plain">:</span> <span class="str">&quot;USD&quot;</span></code></div>
+                  <div class="scene-code-line scene-scroll-focus"><span class="scene-code-no">18</span><code>&nbsp;&nbsp;<span class="plain">})</span></code></div>
+                  <div class="scene-code-line scene-scroll-muted"><span class="scene-code-no">19</span><code><span class="kw">return</span> <span class="plain">checkout.url</span></code></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div><h3>Guide attention to the answer.</h3><p>Travel through long files, settle on a range, and let the important lines lead.</p></div>
+        </a>
+        <a class="home-scene-card home-scene-card--terminal" href="/terminal">
+          <div class="home-scene-card__top"><span>04</span><span>TERMINAL</span><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 15 15 5m0 0H7m8 0v8" stroke="currentColor" stroke-width="1.5"/></svg></div>
+          <div class="home-scene-card__visual" aria-hidden="true">
+            <div class="scene-demo scene-demo--terminal">
+              <div class="scene-demo__bar"><span class="scene-demo__lights"><i></i><i></i><i></i></span><span>TERMINAL</span></div>
+              <div class="scene-demo__viewport scene-terminal-viewport">
+                <div class="scene-terminal-command"><span class="terminal-prompt">~/studio</span> <span class="terminal-sign">❯</span> npm run render</div>
+                <div class="scene-terminal-output scene-terminal-output--one">Preparing composition…</div>
+                <div class="scene-terminal-output scene-terminal-output--two"><span class="terminal-ok">✓</span> 184 frames rendered</div>
+                <div class="scene-terminal-progress"><i></i></div>
+                <div class="scene-terminal-output scene-terminal-output--done">Exported <strong>scene.mp4</strong></div>
+                <div class="scene-terminal-command scene-terminal-command--ready"><span class="terminal-prompt">~/studio</span> <span class="terminal-sign">❯</span> <span class="scene-demo__caret"></span></div>
+              </div>
+            </div>
+          </div>
+          <div><h3>Turn commands into a story.</h3><p>Present commands and output with a convincing terminal cadence.</p></div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section home-section--light" aria-labelledby="quality-title">
+    <div class="mx-auto w-full max-w-[1320px] px-5 py-24 text-slate-950 sm:px-8 sm:py-32">
+      <div class="grid gap-14 lg:grid-cols-[0.78fr_1.22fr] lg:gap-24">
+        <div class="lg:sticky lg:top-28 lg:self-start">
+          <p class="home-kicker !text-slate-500">Built for the final frame</p>
+          <h2 id="quality-title" class="mt-5 text-4xl font-medium leading-[0.98] tracking-[-0.055em] sm:text-5xl">Details viewers feel,<br>before they notice.</h2>
+          <p class="mt-6 max-w-md text-base leading-7 text-slate-600">The studio handles the visual decisions that make code feel composed instead of captured.</p>
+          <a class="mt-8 inline-flex items-center gap-3 border-b border-slate-300 pb-2 text-sm font-bold text-slate-950 transition hover:border-slate-950" href="/code-typer">Open the studio <span aria-hidden="true">↗</span></a>
+        </div>
+
+        <div class="home-capabilities">
+          <article><span class="home-capabilities__number">01</span><div><h3>Editor-accurate syntax</h3><p>Real theme rules color keywords, parameters, functions, classes, strings, comments, and punctuation in context.</p></div><div class="home-token-strip" aria-hidden="true"><i class="bg-[#c586c0]"></i><i class="bg-[#4ec9b0]"></i><i class="bg-[#dcdcaa]"></i><i class="bg-[#ce9178]"></i><i class="bg-[#6a9955]"></i></div></article>
+          <article><span class="home-capabilities__number">02</span><div><h3>Motion with restraint</h3><p>Opening delays, typing rhythm, line transitions, scroll focus, and hold timing work together as one choreography.</p></div><div class="home-motion-curve" aria-hidden="true"><svg viewBox="0 0 220 70" fill="none"><path d="M2 65C43 65 39 7 89 7h129" stroke="currentColor" stroke-width="2"/><circle cx="2" cy="65" r="3" fill="currentColor"/><circle cx="218" cy="7" r="3" fill="currentColor"/></svg></div></article>
+          <article><span class="home-capabilities__number">03</span><div><h3>Output that travels</h3><p>Export MP4 for editing, GIF for sharing, HTML for the web, or JSON to preserve the scene configuration.</p></div><div class="home-format-list" aria-label="Supported formats"><span>MP4</span><span>GIF</span><span>HTML</span><span>JSON</span></div></article>
+          <article><span class="home-capabilities__number">04</span><div><h3>A consistent design system</h3><p>Typography, spacing, editor chrome, canvas depth, aspect ratios, and theme controls stay aligned across every scene.</p></div><div class="home-ratio-list" aria-label="Supported aspect ratios"><span class="aspect-wide">16:9</span><span class="aspect-square">1:1</span></div></article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section home-process" aria-labelledby="process-title">
+    <div class="mx-auto w-full max-w-[1320px] px-5 py-24 sm:px-8 sm:py-32">
+      <div class="grid gap-10 lg:grid-cols-2 lg:items-end">
+        <div><p class="home-kicker">Zero-timeline workflow</p><h2 id="process-title" class="mt-5 text-4xl font-medium tracking-[-0.055em] text-slate-950 sm:text-5xl">From source to scene<br>in three decisions.</h2></div>
+        <p class="max-w-lg text-base leading-7 text-slate-600 lg:justify-self-end">No layers to manage and no keyframes to tune. Choose the story, refine its pace, then take the finished frame wherever it needs to go.</p>
+      </div>
+      <ol class="mt-16 grid border-y border-slate-900/10 md:grid-cols-3">
+        <li class="home-process-step"><span>01</span><div><h3>Choose the scene</h3><p>Typing, diff, scroll focus, or terminal.</p></div></li>
+        <li class="home-process-step"><span>02</span><div><h3>Set the rhythm</h3><p>Paste code, pick a theme, and tune timing.</p></div></li>
+        <li class="home-process-step"><span>03</span><div><h3>Export the frame</h3><p>Render a format ready for your workflow.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="home-cta" aria-labelledby="cta-title">
+    <div class="home-cta__grid" aria-hidden="true"></div>
+    <div class="relative z-10 mx-auto flex w-full max-w-[1050px] flex-col items-center px-5 py-28 text-center sm:px-8 sm:py-40">
+      <p class="home-kicker">Your next scene starts here</p>
+      <h2 id="cta-title" class="mt-6 max-w-4xl text-[clamp(3.2rem,7.4vw,7.2rem)] font-medium leading-[0.88] tracking-[-0.075em] text-slate-950">Give the code<br><span>its moment.</span></h2>
+      <p class="mt-7 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">Start with a snippet. Leave with a polished motion asset.</p>
+      <a class="home-button home-button--primary mt-10" href="/code-typer">Create your first scene <span aria-hidden="true">↗</span></a>
     </div>
   </section>
 </div>

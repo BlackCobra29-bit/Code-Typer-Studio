@@ -1,6 +1,6 @@
-# Code Typer Studio
+# Coduxum
 
-Code Typer Studio is a FastAPI web application for creating polished code-typing and terminal animations directly in the browser. It combines a configurable code editor, syntax-aware rendering, a macOS-style terminal simulator, live previews, and downloadable GIF or HTML output in one lightweight project.
+Coduxum is a FastAPI web application for creating polished code-typing and terminal animations directly in the browser. It combines a configurable code editor, syntax-aware rendering, a macOS-style terminal simulator, live previews, and downloadable GIF or HTML output in one lightweight project.
 
 The application contains two focused tools:
 
@@ -15,7 +15,7 @@ The application contains two focused tools:
 
 Code Studio supports language-aware highlighting, file icons, multiple themes, configurable typing modes, line numbers, window chrome, cursor styles, playback controls, and common output dimensions.
 
-![Code Typer Studio showing an animated FastAPI Python example](docs/images/code-typer-studio.png)
+![Coduxum showing an animated FastAPI Python example](docs/images/code-typer-studio.png)
 
 ### Terminal Studio
 

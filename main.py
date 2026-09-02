@@ -112,7 +112,7 @@ export async function loadProfile(userId) {
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="Code Typer Studio")
+app = FastAPI(title="Coduxum")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 templates = Jinja2Templates(directory=BASE_DIR / "templates")

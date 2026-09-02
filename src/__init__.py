@@ -1,2 +1,1 @@
-"""Code Typer Studio app package."""
-
+"""Coduxum app package."""

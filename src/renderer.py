@@ -121,7 +121,7 @@ def build_typing_html(code: str, options: RenderOptions, standalone: bool = Fals
 def export_project_json(code: str, options: RenderOptions) -> str:
     return json.dumps(
         {
-            "app": "Code Typer Studio",
+            "app": "Coduxum",
             "version": 1,
             "code": code,
             "options": options.__dict__,
