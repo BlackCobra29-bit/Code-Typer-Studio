@@ -367,7 +367,26 @@ function initTypingCardAnimation(surface) {
   window.requestAnimationFrame(drawTypingFrame);
 }
 
+function initHomeNavigation() {
+  const header = document.querySelector('body > div > header');
+  if (!header) return;
+
+  const updateNavigationSurface = () => {
+    const isHomePage = Boolean(document.querySelector('.home-page'));
+    header.classList.toggle('home-nav-scrolled', isHomePage && window.scrollY > 8);
+  };
+
+  if (header.dataset.homeScrollInitialized !== 'true') {
+    header.dataset.homeScrollInitialized = 'true';
+    window.addEventListener('scroll', updateNavigationSurface, { passive: true });
+  }
+
+  updateNavigationSurface();
+}
+
 function initHomePage() {
+  initHomeNavigation();
+
   const surface = document.querySelector('.home-surface');
   if (!surface || surface.dataset.homeInitialized === 'true') return;
   surface.dataset.homeInitialized = 'true';
