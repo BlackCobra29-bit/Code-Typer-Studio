@@ -136,6 +136,7 @@ function initHeroCodeField(surface) {
     if (width < 700) {
       return [
         { x: -.08, y: .08, scale: .76, rotation: -.035, opacity: .68, phase: .08, depth: .72, languageOffset: 0 },
+        { x: .97, y: .12, scale: .68, rotation: .035, opacity: .52, phase: .34, depth: .64, languageOffset: 1, align: 'right' },
         { x: .23, y: .65, scale: .58, rotation: .045, opacity: .38, phase: .58, depth: .38, languageOffset: 2 },
       ];
     }
@@ -146,15 +147,19 @@ function initHeroCodeField(surface) {
     ];
   }
 
-  function drawCodeLine(line, x, y, alpha, language) {
-    let cursorX = x;
-    tokenizeLine(line, language).forEach((segment) => {
+  function drawCodeLine(line, x, y, alpha, language, align = 'left') {
+    const segments = tokenizeLine(line, language);
+    const lineWidth = segments.reduce((total, segment) => total + context.measureText(segment.text).width, 0);
+    const startX = align === 'right' ? x - lineWidth : x;
+    let cursorX = startX;
+    context.textAlign = 'left';
+    segments.forEach((segment) => {
       context.fillStyle = syntaxColors[segment.type];
       context.globalAlpha = alpha;
       context.fillText(segment.text, cursorX, y);
       cursorX += context.measureText(segment.text).width;
     });
-    return cursorX;
+    return { startX, endX: cursorX };
   }
 
   function drawCodeStream(layout, elapsed, staticFrame = false) {
@@ -198,6 +203,7 @@ function initHeroCodeField(surface) {
     context.globalAlpha = streamAlpha * .72;
     context.shadowColor = syntaxColors.language;
     context.shadowBlur = 12;
+    context.textAlign = layout.align || 'left';
     context.fillText(`// ${snippet.language}  ·  LIVE`, 0, 0);
     context.shadowBlur = 0;
     context.letterSpacing = '0px';
@@ -207,12 +213,12 @@ function initHeroCodeField(surface) {
     let caretY = 0;
     lines.forEach((line, lineIndex) => {
       const y = 27 + lineIndex * lineHeight;
+      const lineMetrics = drawCodeLine(line, 0, y, streamAlpha * .72, snippet.language, layout.align);
       context.fillStyle = syntaxColors.lineNumber;
       context.globalAlpha = streamAlpha * .52;
       context.textAlign = 'right';
-      context.fillText(String(lineIndex + 1).padStart(2, '0'), -14, y);
-      context.textAlign = 'left';
-      caretX = drawCodeLine(line, 0, y, streamAlpha * .72, snippet.language);
+      context.fillText(String(lineIndex + 1).padStart(2, '0'), lineMetrics.startX - 14, y);
+      caretX = lineMetrics.endX;
       caretY = y;
     });
 
