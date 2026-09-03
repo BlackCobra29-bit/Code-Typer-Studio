@@ -11,6 +11,7 @@
 {% block content %}
 <div class="home-surface" hx-boost="true" hx-target="#page-content" hx-select="#page-content" hx-swap="outerHTML transition:true show:top" hx-push-url="true" hx-indicator="#page-loading" hx-sync="#page-content:replace">
   <section class="home-hero" aria-labelledby="home-title">
+    <canvas class="home-code-field" data-code-field aria-hidden="true"></canvas>
     <div class="relative z-10 mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1320px] items-start justify-center px-5 pb-20 pt-16 text-center sm:px-8 sm:pb-24 sm:pt-20">
       <div class="mx-auto flex w-full max-w-[920px] flex-col items-center">
         <h1 id="home-title" class="mt-0 max-w-[900px] text-balance text-[clamp(3.45rem,7.5vw,7.1rem)] font-medium leading-[0.88] tracking-[-0.072em] text-white">
