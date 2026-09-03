@@ -6,7 +6,7 @@
 <meta name="description" content="Create polished code typing, diff, scroll, and terminal animations for programming videos.">
 {% endblock %}
 
-{% block page_class %}home-page bg-[#f2f0eb] text-slate-950{% endblock %}
+{% block page_class %}home-page bg-transparent text-slate-100{% endblock %}
 
 {% block content %}
 <div class="home-surface" hx-boost="true" hx-target="#page-content" hx-select="#page-content" hx-swap="outerHTML transition:true show:top" hx-push-url="true" hx-indicator="#page-loading" hx-sync="#page-content:replace">
@@ -19,7 +19,7 @@
           <span class="home-eyebrow__version">04 scenes</span>
         </div>
 
-        <h1 id="home-title" class="mt-8 max-w-[900px] text-balance text-[clamp(3.8rem,8.2vw,7.8rem)] font-medium leading-[0.88] tracking-[-0.072em] text-slate-950">
+        <h1 id="home-title" class="mt-8 max-w-[900px] text-balance text-[clamp(3.8rem,8.2vw,7.8rem)] font-medium leading-[0.88] tracking-[-0.072em] text-white">
           Make code<br>
           <span class="home-title-accent home-title-brush">
             <span>worth watching.</span>
@@ -30,7 +30,7 @@
           </span>
         </h1>
 
-        <p class="mt-8 max-w-[680px] text-pretty text-base font-normal leading-7 text-slate-600 sm:text-lg sm:leading-8">
+        <p class="mt-8 max-w-[680px] text-pretty text-base font-normal leading-7 text-slate-400 sm:text-lg sm:leading-8">
           Design studio-grade code animations with real syntax themes, intentional motion, and export-ready output—without opening a timeline editor.
         </p>
 
@@ -41,21 +41,21 @@
           </a>
           <a class="home-button home-button--quiet" href="#scenes">
             Explore scenes
-            <span class="font-mono text-[10px] text-slate-500">↓</span>
+            <span class="font-mono text-xs text-slate-500">↓</span>
           </a>
         </div>
 
-        <dl class="mt-12 grid w-full max-w-[660px] grid-cols-3 border-y border-slate-900/10 py-5 text-center">
+        <dl class="mt-12 grid w-full max-w-[660px] grid-cols-3 border-y border-white/10 py-5 text-center">
           <div>
-            <dt class="font-mono text-xl font-medium tracking-[-0.04em] text-slate-950 sm:text-2xl">52</dt>
+            <dt class="font-mono text-xl font-medium tracking-[-0.04em] text-white sm:text-2xl">52</dt>
             <dd class="mt-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Languages</dd>
           </div>
-          <div class="border-x border-slate-900/10">
-            <dt class="font-mono text-xl font-medium tracking-[-0.04em] text-slate-950 sm:text-2xl">18</dt>
+          <div class="border-x border-white/10">
+            <dt class="font-mono text-xl font-medium tracking-[-0.04em] text-white sm:text-2xl">18</dt>
             <dd class="mt-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Editor themes</dd>
           </div>
           <div>
-            <dt class="font-mono text-xl font-medium tracking-[-0.04em] text-slate-950 sm:text-2xl">04</dt>
+            <dt class="font-mono text-xl font-medium tracking-[-0.04em] text-white sm:text-2xl">04</dt>
             <dd class="mt-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Export formats</dd>
           </div>
         </dl>
@@ -64,11 +64,11 @@
     </div>
   </section>
 
-  <section id="scenes" class="home-section border-t border-slate-900/10" aria-labelledby="scenes-title">
+  <section id="scenes" class="home-section border-t border-white/10" aria-labelledby="scenes-title">
     <div class="mx-auto w-full max-w-[1320px] px-5 py-24 sm:px-8 sm:py-32">
-      <div class="grid gap-8 border-b border-slate-900/10 pb-12 lg:grid-cols-[0.65fr_1.35fr] lg:items-end">
-        <div><p class="home-kicker">Scene library / 04</p><h2 id="scenes-title" class="mt-5 text-4xl font-medium tracking-[-0.055em] text-slate-950 sm:text-5xl">One visual language.<br>Four ways to explain.</h2></div>
-        <p class="max-w-xl text-base leading-7 text-slate-600 lg:justify-self-end">Every studio shares the same themes, typography, canvas controls, and export workflow, so a full video feels designed as one system.</p>
+      <div class="grid gap-8 border-b border-white/10 pb-12 lg:grid-cols-[0.65fr_1.35fr] lg:items-end">
+        <div><p class="home-kicker">Scene library / 04</p><h2 id="scenes-title" class="mt-5 text-4xl font-medium tracking-[-0.055em] text-white sm:text-5xl">One visual language.<br>Four ways to explain.</h2></div>
+        <p class="max-w-xl text-base leading-7 text-slate-400 lg:justify-self-end">Every studio shares the same themes, typography, canvas controls, and export workflow, so a full video feels designed as one system.</p>
       </div>
 
       <div class="home-scene-grid mt-8">
@@ -148,13 +148,13 @@
   </section>
 
   <section class="home-section home-section--light" aria-labelledby="quality-title">
-    <div class="mx-auto w-full max-w-[1320px] px-5 py-24 text-slate-950 sm:px-8 sm:py-32">
+    <div class="mx-auto w-full max-w-[1320px] px-5 py-24 text-slate-100 sm:px-8 sm:py-32">
       <div class="grid gap-14 lg:grid-cols-[0.78fr_1.22fr] lg:gap-24">
         <div class="lg:sticky lg:top-28 lg:self-start">
           <p class="home-kicker !text-slate-500">Built for the final frame</p>
-          <h2 id="quality-title" class="mt-5 text-4xl font-medium leading-[0.98] tracking-[-0.055em] sm:text-5xl">Details viewers feel,<br>before they notice.</h2>
-          <p class="mt-6 max-w-md text-base leading-7 text-slate-600">The studio handles the visual decisions that make code feel composed instead of captured.</p>
-          <a class="mt-8 inline-flex items-center gap-3 border-b border-slate-300 pb-2 text-sm font-bold text-slate-950 transition hover:border-slate-950" href="/code-typer">Open the studio <span aria-hidden="true">↗</span></a>
+          <h2 id="quality-title" class="mt-5 text-4xl font-medium leading-[0.98] tracking-[-0.055em] text-white sm:text-5xl">Details viewers feel,<br>before they notice.</h2>
+          <p class="mt-6 max-w-md text-base leading-7 text-slate-400">The studio handles the visual decisions that make code feel composed instead of captured.</p>
+          <a class="home-inline-link mt-8 inline-flex items-center gap-3 border-b pb-2 text-sm font-bold text-white transition" href="/code-typer">Open the studio <span aria-hidden="true">↗</span></a>
         </div>
 
         <div class="home-capabilities">
@@ -170,10 +170,10 @@
   <section class="home-section home-process" aria-labelledby="process-title">
     <div class="mx-auto w-full max-w-[1320px] px-5 py-24 sm:px-8 sm:py-32">
       <div class="grid gap-10 lg:grid-cols-2 lg:items-end">
-        <div><p class="home-kicker">Zero-timeline workflow</p><h2 id="process-title" class="mt-5 text-4xl font-medium tracking-[-0.055em] text-slate-950 sm:text-5xl">From source to scene<br>in three decisions.</h2></div>
-        <p class="max-w-lg text-base leading-7 text-slate-600 lg:justify-self-end">No layers to manage and no keyframes to tune. Choose the story, refine its pace, then take the finished frame wherever it needs to go.</p>
+        <div><p class="home-kicker">Zero-timeline workflow</p><h2 id="process-title" class="mt-5 text-4xl font-medium tracking-[-0.055em] text-white sm:text-5xl">From source to scene<br>in three decisions.</h2></div>
+        <p class="max-w-lg text-base leading-7 text-slate-400 lg:justify-self-end">No layers to manage and no keyframes to tune. Choose the story, refine its pace, then take the finished frame wherever it needs to go.</p>
       </div>
-      <ol class="mt-16 grid border-y border-slate-900/10 md:grid-cols-3">
+      <ol class="mt-16 grid border-y border-white/10 md:grid-cols-3">
         <li class="home-process-step"><span>01</span><div><h3>Choose the scene</h3><p>Typing, diff, scroll focus, or terminal.</p></div></li>
         <li class="home-process-step"><span>02</span><div><h3>Set the rhythm</h3><p>Paste code, pick a theme, and tune timing.</p></div></li>
         <li class="home-process-step"><span>03</span><div><h3>Export the frame</h3><p>Render a format ready for your workflow.</p></div></li>
@@ -185,8 +185,8 @@
     <div class="home-cta__grid" aria-hidden="true"></div>
     <div class="relative z-10 mx-auto flex w-full max-w-[1050px] flex-col items-center px-5 py-28 text-center sm:px-8 sm:py-40">
       <p class="home-kicker">Your next scene starts here</p>
-      <h2 id="cta-title" class="mt-6 max-w-4xl text-[clamp(3.2rem,7.4vw,7.2rem)] font-medium leading-[0.88] tracking-[-0.075em] text-slate-950">Give the code<br><span>its moment.</span></h2>
-      <p class="mt-7 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">Start with a snippet. Leave with a polished motion asset.</p>
+      <h2 id="cta-title" class="mt-6 max-w-4xl text-[clamp(3.2rem,7.4vw,7.2rem)] font-medium leading-[0.88] tracking-[-0.075em] text-white">Give the code<br><span>its moment.</span></h2>
+      <p class="mt-7 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">Start with a snippet. Leave with a polished motion asset.</p>
       <a class="home-button home-button--primary mt-10" href="/code-typer">Create your first scene <span aria-hidden="true">↗</span></a>
     </div>
   </section>

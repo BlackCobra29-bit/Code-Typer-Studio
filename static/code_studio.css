@@ -112,3 +112,4 @@
 @keyframes page-in {
   from { opacity: 0; transform: translateY(8px); }
 }
+.brand-logo { filter: drop-shadow(0 0 1px rgb(15 23 42 / .72)); }
