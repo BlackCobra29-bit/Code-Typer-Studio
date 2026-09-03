@@ -34,16 +34,18 @@ body:has(.home-page) > div > header {
   top: 0;
   z-index: 45;
   border-bottom: 0;
-  background: rgb(7 8 11 / .34);
+  background: transparent;
   box-shadow: none;
-  backdrop-filter: blur(18px) saturate(130%);
+  backdrop-filter: none;
 }
 
 body:has(.home-page) > div {
   background:
-    linear-gradient(90deg, var(--home-paper) 0%, transparent 22%, transparent 78%, var(--home-paper) 100%),
-    radial-gradient(ellipse 780px 520px at 50% 70px, rgb(91 112 238 / .18), transparent 70%),
-    var(--home-paper);
+    linear-gradient(90deg, rgb(7 8 11 / .98) 0%, transparent 24%, transparent 76%, rgb(7 8 11 / .98) 100%),
+    radial-gradient(ellipse 900px 650px at 50% 0, rgb(82 103 224 / .19) 0%, rgb(42 52 119 / .11) 42%, transparent 76%),
+    radial-gradient(circle 520px at 16% 270px, rgb(63 84 191 / .055), transparent 72%),
+    radial-gradient(circle 500px at 84% 320px, rgb(255 91 53 / .035), transparent 74%),
+    linear-gradient(180deg, #090a10 0%, var(--home-paper) 720px);
 }
 
 body:has(.home-page) > div > header > div { max-width: 1320px; }
@@ -104,22 +106,6 @@ body:has(.home-page) > div > footer {
   pointer-events: none;
   opacity: .9;
   filter: saturate(1.16);
-}
-
-.home-hero::before {
-  position: absolute;
-  top: -380px;
-  left: 50%;
-  z-index: -1;
-  width: min(980px, 105vw);
-  height: 720px;
-  border: 0;
-  border-radius: 50%;
-  content: "";
-  transform: translateX(-50%);
-  pointer-events: none;
-  background: radial-gradient(circle at 50% 76%, rgb(78 103 232 / .1), transparent 53%);
-  box-shadow: 0 0 120px rgb(62 81 191 / .08);
 }
 
 .home-hero::after {
