@@ -47,10 +47,12 @@ function initHeroCodeField(surface) {
     GO: new Set(['package', 'import', 'func', 'var', 'const', 'go', 'defer', 'if', 'else', 'return', 'nil']),
   };
 
-  const cycleDuration = 7200;
-  const typingDuration = 4200;
-  const holdUntil = 5750;
-  const fadeUntil = 6900;
+  const characterDuration = 38;
+  const snippetDurations = snippets.map((snippet) => snippet.code.length * characterDuration);
+  const snippetOffsets = snippetDurations.map((_, index) => (
+    snippetDurations.slice(0, index).reduce((total, duration) => total + duration, 0)
+  ));
+  const sequenceDuration = snippetDurations.reduce((total, duration) => total + duration, 0);
   let width = 0;
   let height = 0;
   let pixelRatio = 1;
@@ -61,15 +63,6 @@ function initHeroCodeField(surface) {
   let targetParallaxX = 0;
   let targetParallaxY = 0;
   let disposed = false;
-
-  function clamp(value, minimum = 0, maximum = 1) {
-    return Math.min(maximum, Math.max(minimum, value));
-  }
-
-  function smoothstep(value) {
-    const bounded = clamp(value);
-    return bounded * bounded * (3 - 2 * bounded);
-  }
 
   function tokenizeLine(line, language) {
     const segments = [];
@@ -165,18 +158,24 @@ function initHeroCodeField(surface) {
   }
 
   function drawCodeStream(layout, elapsed, staticFrame = false) {
-    const phasedTime = staticFrame ? typingDuration : elapsed + layout.phase * cycleDuration;
-    const cycleIndex = Math.floor(phasedTime / cycleDuration);
-    const localTime = phasedTime % cycleDuration;
-    const snippet = snippets[(cycleIndex + layout.languageOffset) % snippets.length];
+    let snippetIndex = layout.languageOffset;
+    let localTime = 0;
+
+    if (!staticFrame) {
+      localTime = (elapsed + snippetOffsets[layout.languageOffset]) % sequenceDuration;
+      snippetIndex = 0;
+      while (localTime >= snippetDurations[snippetIndex]) {
+        localTime -= snippetDurations[snippetIndex];
+        snippetIndex = (snippetIndex + 1) % snippets.length;
+      }
+    }
+
+    const snippet = snippets[snippetIndex];
     const visibleCharacters = staticFrame
       ? snippet.code.length
-      : Math.floor(snippet.code.length * clamp(localTime / typingDuration));
+      : Math.min(snippet.code.length, Math.floor(localTime / characterDuration) + 1);
     const visibleCode = snippet.code.slice(0, visibleCharacters);
-    const fadeIn = smoothstep(localTime / 440);
-    const fadeOut = localTime <= holdUntil ? 1 : 1 - smoothstep((localTime - holdUntil) / (fadeUntil - holdUntil));
-    const streamAlpha = layout.opacity * fadeIn * fadeOut;
-    if (streamAlpha <= .005) return;
+    const streamAlpha = layout.opacity;
 
     const floatX = staticFrame ? 0 : Math.sin(elapsed * .00022 + layout.phase * 9) * 10 * layout.depth;
     const floatY = staticFrame ? 0 : Math.cos(elapsed * .00018 + layout.phase * 7) * 8 * layout.depth;
@@ -217,7 +216,7 @@ function initHeroCodeField(surface) {
       caretY = y;
     });
 
-    const showCaret = staticFrame || (localTime < holdUntil && Math.floor(elapsed / 480) % 2 === 0);
+    const showCaret = staticFrame || Math.floor(elapsed / 480) % 2 === 0;
     if (showCaret) {
       context.globalAlpha = streamAlpha;
       context.fillStyle = syntaxColors.cursor;
