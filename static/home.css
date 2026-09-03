@@ -58,7 +58,7 @@ body:has(.home-page) > div {
 
 body:has(.home-page) > div > header > div { max-width: 1320px; }
 body:has(.home-page) > div > header a,
-body:has(.home-page) > div > header button { color: #98a2b2; }
+body:has(.home-page) > div > header button { color: #fff; }
 body:has(.home-page) > div > header a:hover,
 body:has(.home-page) > div > header button:hover { color: #fff; }
 body:has(.home-page) > div > header a:focus-visible,
