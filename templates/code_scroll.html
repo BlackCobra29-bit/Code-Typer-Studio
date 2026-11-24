@@ -1,7 +1,8 @@
 {% extends "_base.html" %}
 {% block title %}Code Scroll — Coduxum{% endblock %}
+{% block page_class %}studio-page code-scroll-page bg-[#07080b] text-slate-100{% endblock %}
 {% block content %}
-<form id="scroll-form" class="min-h-full bg-slate-50" method="post">
+<form id="scroll-form" class="code-scroll-surface min-h-full" method="post">
   <button id="scroll-preview-trigger" class="hidden" type="button" hx-post="/code-scroll/preview" hx-include="#scroll-form" hx-target="#scroll-preview-panel" hx-swap="innerHTML" hx-trigger="refreshPreview" hx-sync="this:replace"></button>
   <div class="mx-auto flex w-full max-w-[1265px] flex-col items-center px-4 pb-24 sm:pb-28">
     <section class="w-full max-w-[900px] py-12 text-center sm:py-16" aria-labelledby="code-scroll-title">
@@ -27,10 +28,23 @@
           <button class="h-9 rounded-lg border border-emerald-500/35 bg-emerald-600 px-5 text-sm font-bold text-white" type="submit" formaction="/code-scroll/download/mp4" formmethod="post" data-scroll-export>Export MP4</button>
           <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white" type="submit" formaction="/code-scroll/download/project" formmethod="post" data-scroll-export>Export JSON</button>
         </nav>
+        {% include "_mp4_quality.html" %}
       </div>
     </section>
 
     <section class="mt-12 flex w-full max-w-[920px] flex-col gap-3" aria-label="Code scroll controls">
+      <div class="scroll-mode-control">
+        <div>
+          <label class="scroll-highlight-switch" for="scroll-highlight-lines">
+            <span>Highlight lines</span>
+            <input type="hidden" name="highlight_lines" value="off">
+            <input id="scroll-highlight-lines" class="scroll-highlight-input" type="checkbox" role="switch" name="highlight_lines" value="on" aria-label="Highlight lines" aria-describedby="scroll-highlight-help" {% if values.highlight_lines %}checked{% endif %}>
+            <span class="scroll-highlight-track" aria-hidden="true"></span>
+            <span id="scroll-highlight-state">{{ 'On' if values.highlight_lines else 'Off' }}</span>
+          </label>
+          <p id="scroll-highlight-help">{{ 'Scroll to and highlight the selected lines.' if values.highlight_lines else 'Scroll to the end with all lines at normal brightness.' }}</p>
+        </div>
+      </div>
       <div class="grid rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100 sm:grid-cols-2 lg:grid-cols-4 sm:gap-2">
         <div class="relative block py-1" data-scroll-custom-select="scroll-language">
           <span class="mb-1 block text-xs font-bold text-[#333]">Language</span>
@@ -55,7 +69,7 @@
       </div>
 
       <section class="scroll-source-card rounded-lg bg-white p-2 shadow-xl shadow-slate-300/50 ring-1 ring-slate-100" aria-label="Source code editor">
-        <div class="mb-2 flex items-center justify-between gap-2"><div><p class="text-xs font-bold text-[#333]">Source Code</p><p class="mt-1 text-xs font-normal text-slate-500">Theme colors come directly from the selected TextMate rules</p></div><span class="rounded-full bg-sky-50 px-2 py-1 text-[10px] font-semibold text-sky-700">FOCUS</span></div>
+        <div class="mb-2 flex items-center justify-between gap-2"><div><p class="text-xs font-bold text-[#333]">Source Code</p><p class="mt-1 text-xs font-normal text-slate-500">Theme colors come directly from the selected TextMate rules</p></div><span id="scroll-mode-badge" class="rounded-full bg-sky-50 px-2 py-1 text-[10px] font-semibold text-sky-700">FOCUS</span></div>
         <textarea id="scroll_code" name="code" spellcheck="false">{{ values.code }}</textarea>
       </section>
 
@@ -66,7 +80,7 @@
           <label><span class="mb-1 block text-xs text-slate-500">Font size</span><input name="font_size" type="number" min="12" max="32" value="{{ values.font_size }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"></label>
           <label><span class="mb-1 block text-xs text-slate-500">Line height</span><input name="line_height" type="number" min="1.1" max="2.2" step=".05" value="{{ values.line_height }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"></label>
           <label><span class="mb-1 block text-xs text-slate-500">Scroll duration</span><input name="scroll_ms" type="number" min="450" max="3200" step="50" value="{{ values.scroll_ms }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"></label>
-          <label><span class="mb-1 block text-xs text-slate-500">Focus hold</span><input name="hold_ms" type="number" min="300" max="3000" step="50" value="{{ values.hold_ms }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"></label>
+          <label><span id="scroll-hold-label" class="mb-1 block text-xs text-slate-500">Focus hold</span><input name="hold_ms" type="number" min="300" max="3000" step="50" value="{{ values.hold_ms }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"></label>
           <label><span class="mb-1 block text-xs text-slate-500">Opening delay</span><input name="start_delay_ms" type="number" min="250" max="3000" step="50" value="{{ values.start_delay_ms }}" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"></label>
           <label><span class="mb-1 block text-xs text-slate-500">Frame size</span><select id="scroll-aspect-ratio" name="aspect_ratio" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm">{% for ratio in aspect_ratios %}<option value="{{ ratio.value }}" {% if values.aspect_ratio == ratio.value %}selected{% endif %}>{{ ratio.label }}</option>{% endfor %}</select></label>
           <label><span class="mb-1 block text-xs text-slate-500">Canvas</span><select name="background_style" class="h-9 w-full rounded-md border-0 bg-slate-100 px-2 text-sm"><option value="none" {% if values.background_style == 'none' %}selected{% endif %}>Plain</option><option value="gradient" {% if values.background_style == 'gradient' %}selected{% endif %}>Gradient</option></select></label>

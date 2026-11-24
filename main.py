@@ -40,17 +40,17 @@ FONTS = [
 ]
 
 CODE_ASPECT_RATIOS = [
-    {"value": "16_9", "label": "16:9 - 1280x720 px", "width": 1280, "height": 720},
-    {"value": "1_1", "label": "1:1 - 1080x1080 px", "width": 1080, "height": 1080},
+    {"value": "16_9", "label": "16:9 - Landscape", "width": 1280, "height": 720},
+    {"value": "1_1", "label": "1:1 - Square", "width": 1080, "height": 1080},
 ]
 CODE_ASPECT_RATIO_DIMENSIONS = {
     item["value"]: (item["width"], item["height"])
     for item in CODE_ASPECT_RATIOS
 }
 TERMINAL_ASPECT_RATIOS = [
-    {"value": "display", "label": "Display - 700x300", "width": 700, "height": 300},
-    {"value": "16_9", "label": "16:9 - 1280x720", "width": 1280, "height": 720},
-    {"value": "9_16", "label": "9:16 - 720x1280", "width": 720, "height": 1280},
+    {"value": "display", "label": "Display — edge to edge", "width": 700, "height": 300},
+    {"value": "16_9", "label": "16:9 — Landscape · Full HD MP4", "width": 1280, "height": 720},
+    {"value": "9_16", "label": "9:16 — Portrait · Full HD MP4", "width": 720, "height": 1280},
     {"value": "1_1", "label": "1:1 - 1080x1080", "width": 1080, "height": 1080},
     {"value": "4_5", "label": "4:5 - 1080x1350", "width": 1080, "height": 1350},
     {"value": "4_3", "label": "4:3 - 1024x768", "width": 1024, "height": 768},
@@ -321,7 +321,7 @@ async def download_terminal_html(request: Request) -> Response:
 @app.post("/terminal/download/gif")
 async def download_terminal_gif(request: Request) -> Response:
     values = await _terminal_payload_from_request(request)
-    gif_bytes = build_terminal_gif(_terminal_options(values))
+    gif_bytes = await run_in_threadpool(build_terminal_gif, _terminal_options(values))
     return Response(
         gif_bytes,
         media_type="image/gif",
@@ -332,7 +332,7 @@ async def download_terminal_gif(request: Request) -> Response:
 @app.post("/terminal/download/mp4")
 async def download_terminal_mp4(request: Request) -> Response:
     values = await _terminal_payload_from_request(request)
-    mp4_bytes = build_terminal_mp4(_terminal_options(values))
+    mp4_bytes = await run_in_threadpool(build_terminal_mp4, _terminal_options(values))
     return Response(
         mp4_bytes,
         media_type="video/mp4",
@@ -441,7 +441,7 @@ def _default_payload(sample: dict[str, str]) -> dict[str, Any]:
 
 def _default_terminal_payload() -> dict[str, Any]:
     return {
-        "title": "eminem - zsh",
+        "title": "eminem â€” zsh",
         "prompt": "eminem@macbook ~ %",
         "command": DEFAULT_TERMINAL_COMMAND,
         "output": DEFAULT_TERMINAL_OUTPUT,
@@ -450,9 +450,9 @@ def _default_terminal_payload() -> dict[str, Any]:
         "aspect_ratio": "16_9",
         "width": 1280,
         "height": 720,
-        "background_style": "none",
-        "gradient_name": "sunset",
-        "canvas_padding": 52,
+        "background_style": "gradient",
+        "gradient_name": "midnight",
+        "canvas_padding": 50,
         "loop": True,
     }
 
@@ -476,6 +476,7 @@ def _default_scroll_payload() -> dict[str, Any]:
         "font_family": FONTS[0], "font_size": 20, "line_height": 1.55,
         "aspect_ratio": "16_9", "width": 1280, "height": 720, "radius": 14,
         "target_start": 15, "target_end": 17, "scroll_ms": 1700,
+        "highlight_lines": True,
         "hold_ms": 1500, "start_delay_ms": 900,
         "background_style": "gradient", "gradient_name": "midnight", "canvas_padding": 50,
         "show_line_numbers": True, "show_window_chrome": True, "autoplay": True, "loop": False,
@@ -532,6 +533,7 @@ async def _scroll_payload_from_request(request: Request) -> dict[str, Any]:
         "font_size": _int(form.get("font_size"), 20, 12, 32), "line_height": _float(form.get("line_height"), 1.55, 1.1, 2.2),
         "aspect_ratio": aspect_ratio, "width": width, "height": height, "radius": _int(form.get("radius"), 14, 0, 28),
         "target_start": start, "target_end": end, "scroll_ms": _int(form.get("scroll_ms"), 1700, 450, 3200),
+        "highlight_lines": _bool(form.get("highlight_lines", "on")),
         "hold_ms": _int(form.get("hold_ms"), 1500, 300, 3000), "start_delay_ms": _int(form.get("start_delay_ms"), 900, 250, 3000),
         "background_style": _background_style(form.get("background_style")), "gradient_name": str(form.get("gradient_name", "midnight")),
         "canvas_padding": _int(form.get("canvas_padding"), 92, 18, 180), "show_line_numbers": _bool(form.get("show_line_numbers")),
@@ -542,14 +544,14 @@ async def _scroll_payload_from_request(request: Request) -> dict[str, Any]:
 def _scroll_options_from_payload(values: dict[str, Any]):
     return make_scroll_options(**{key: values[key] for key in (
         "language", "theme_name", "font_family", "font_size", "line_height", "width", "height", "radius",
-        "target_start", "target_end", "scroll_ms", "hold_ms", "start_delay_ms", "background_style",
+        "target_start", "target_end", "highlight_lines", "scroll_ms", "hold_ms", "start_delay_ms", "background_style",
         "gradient_name", "canvas_padding", "show_line_numbers", "show_window_chrome", "autoplay", "loop",
     )})
 
 
 async def _terminal_payload_from_request(request: Request) -> dict[str, Any]:
     form = await request.form()
-    aspect_ratio = str(form.get("aspect_ratio", "display"))
+    aspect_ratio = str(form.get("aspect_ratio", "16_9"))
     width, height, aspect_ratio = _apply_terminal_aspect_ratio(aspect_ratio)
     return {
         "title": str(form.get("title", "Terminal"))[:80],
@@ -561,9 +563,9 @@ async def _terminal_payload_from_request(request: Request) -> dict[str, Any]:
         "aspect_ratio": aspect_ratio,
         "width": width,
         "height": height,
-        "background_style": _background_style(form.get("background_style")),
-        "gradient_name": str(form.get("gradient_name", "sunset")),
-        "canvas_padding": _int(form.get("canvas_padding"), 52, 18, 180),
+        "background_style": _background_style(form.get("background_style", "gradient")),
+        "gradient_name": str(form.get("gradient_name", "midnight")),
+        "canvas_padding": _int(form.get("canvas_padding"), 50, 18, 180),
         "loop": _bool(form.get("loop")),
     }
 

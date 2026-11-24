@@ -29,24 +29,6 @@
   color: #8792a5;
 }
 
-body:has(.home-page) > div > header {
-  position: sticky;
-  top: 0;
-  z-index: 45;
-  border-bottom: 0;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  transition: background-color .24s ease, backdrop-filter .24s ease;
-}
-
-body:has(.home-page) > div > header.home-nav-scrolled {
-  background: rgb(7 8 11 / .34);
-  backdrop-filter: blur(18px) saturate(130%);
-  -webkit-backdrop-filter: blur(18px) saturate(130%);
-}
-
 body:has(.home-page) > div {
   background:
     linear-gradient(90deg, rgb(7 8 11 / .98) 0%, transparent 24%, transparent 76%, rgb(7 8 11 / .98) 100%),
@@ -56,42 +38,6 @@ body:has(.home-page) > div {
     linear-gradient(180deg, #090a10 0%, var(--home-paper) 720px);
 }
 
-body:has(.home-page) > div > header > div { max-width: 1320px; }
-body:has(.home-page) > div > header a,
-body:has(.home-page) > div > header button { color: #fff; }
-body:has(.home-page) > div > header a:hover,
-body:has(.home-page) > div > header button:hover { color: #fff; }
-body:has(.home-page) > div > header a:focus-visible,
-body:has(.home-page) > div > header button:focus-visible { outline: 2px solid var(--home-brand); outline-offset: 4px; }
-body:has(.home-page) > div > header a[aria-current="page"] { position: relative; color: #fff !important; }
-body:has(.home-page) > div > header a[aria-current="page"]::after {
-  position: absolute;
-  right: 0;
-  bottom: -9px;
-  left: 0;
-  height: 2px;
-  border-radius: 99px;
-  content: "";
-  background: var(--home-brand);
-  box-shadow: 0 0 16px rgb(255 91 53 / .7);
-}
-body:has(.home-page) > div > header .brand-logo {
-  height: 34px;
-  filter: drop-shadow(0 8px 18px rgb(0 0 0 / .35));
-}
-body:has(.home-page) > div > header details > summary {
-  border-color: rgb(255 255 255 / .1);
-  background: rgb(255 255 255 / .05);
-  color: #dbe1ea;
-  box-shadow: inset 0 1px rgb(255 255 255 / .06), 0 8px 24px rgb(0 0 0 / .2);
-}
-body:has(.home-page) > div > header details nav {
-  border: 1px solid rgb(255 255 255 / .1);
-  background: rgb(14 17 23 / .97);
-  box-shadow: 0 24px 60px rgb(0 0 0 / .55), inset 0 1px rgb(255 255 255 / .05);
-}
-body:has(.home-page) > div > header details nav a:hover,
-body:has(.home-page) > div > header details nav button:hover { background: rgb(255 255 255 / .06); }
 body:has(.home-page) > div > footer {
   border-color: rgb(255 255 255 / .08);
   background: #07080b;
@@ -513,9 +459,6 @@ body:has(.home-page) #contact-modal a[href^="mailto:"] { border-color: rgb(255 1
 }
 
 @media (max-width: 680px) {
-  body:has(.home-page) > div > header nav[aria-label="Main navigation"] { display: none; }
-  body:has(.home-page) > div > header .brand-logo { height: 30px; }
-  body:has(.home-page) > div > header a[aria-current="page"]::after { display: none; }
   .home-eyebrow { gap: 8px; padding-left: 11px; font-size: 9px; letter-spacing: .11em; }
   .home-eyebrow__version { padding-inline: 8px; }
   .home-hero .home-button { min-height: 44px; gap: 7px; padding-inline: 10px; font-size: 13px; }

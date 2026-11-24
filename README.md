@@ -169,9 +169,9 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
 ### Code Scroll
 
 1. Paste a long source file.
-2. Choose the first and last lines that should receive focus.
-3. Adjust travel time, focus hold, typography, and frame styling.
-4. Replay or scrub the centered focus animation.
+2. Keep **Highlight lines** on and choose a line range, or switch it off to scroll to the end without highlighting or dimming lines.
+3. Adjust travel time, end hold, typography, and frame styling.
+4. Replay or scrub the animation.
 5. Export HTML, MP4, GIF, or project JSON.
 
 ### Terminal Studio
@@ -182,14 +182,16 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
 4. Preview the typed command and colorized output.
 5. Export HTML, MP4, or GIF.
 
-Terminal output may be plain text or contain ANSI foreground sequences. Plain output is colored from recognizable errors, warnings, success messages, paths, strings, numbers, and diagnostics. Explicit ANSI colors take priority.
+Terminal Studio defaults to the same Midnight gradient as the code studios, with a macOS-inspired title bar, traffic lights, shell prompt colors, and bundled JetBrains Mono. Commands type word by word; output streams into wrapped rows and scrolls to keep the newest lines visible. Pause, replay, and scrub the preview.
+
+Output accepts plain text or ANSI SGR sequences, including 16-color, 256-color, RGB foreground/background, bold, italic, and underline. Plain output receives restrained colors for errors, warnings, successes, paths, quoted strings, and sizes/timings. Explicit ANSI styles take priority.
 
 ## Export formats
 
 | Format | Available in | Notes |
 | --- | --- | --- |
-| **HTML** | All studios | Self-contained animation with inline styles and playback logic; Code Typer embeds JetBrains Mono; no duration limit |
-| **MP4** | All studios | H.264 video for editors and publishing workflows; code scenes render at 60 fps |
+| **HTML** | All studios | Self-contained animation with inline styles and playback logic; code and terminal scenes embed JetBrains Mono; no duration limit |
+| **MP4** | All studios | H.264 video for editors and publishing workflows; Full HD at 60 fps for code scenes and 30 fps for terminal scenes |
 | **GIF** | All studios | Shareable animated image; code scenes render at 20 fps and fit within 700 × 700 px |
 | **Project JSON** | Code Typer, Code Diff, Code Scroll | Source content and scene configuration for reuse or version control |
 
@@ -197,23 +199,30 @@ Terminal output may be plain text or contain ANSI foreground sequences. Plain ou
 
 Code Typer, Code Diff, and Code Scroll:
 
-- `16:9` — 1280 × 720
-- `1:1` — 1080 × 1080
+- `16:9` — 1920 × 1080 MP4, with a 1280 × 720 logical preview/HTML canvas.
+- `1:1` — 1080 × 1080 MP4 and logical canvas.
 
-Terminal Studio:
+MP4 renders fonts, spacing, chrome, and motion directly at the output resolution.
+The shared encoder uses H.264 CRF 10 with the `veryfast` preset, BT.709 color,
+and fast-start metadata. A bounded queue renders frames in parallel with encoding;
+identical hold frames reuse their raster while preserving the output frame rate.
+Terminal rendering also caches a bounded set of text rows and runs off the request event loop.
+GIF remains a compact 20 fps format capped at 700 × 700 pixels.
 
-- `Display` — 700 × 300
-- `16:9` — 1280 × 720
-- `9:16` — 720 × 1280
+Terminal Studio MP4 sizes (the preview keeps the same layout at a smaller logical size):
+
+- `Display` — 1920 × 824 (padded to even dimensions for H.264)
+- `16:9` — 1920 × 1080
+- `9:16` — 1080 × 1920
 - `1:1` — 1080 × 1080
 - `4:5` — 1080 × 1350
-- `4:3` — 1024 × 768
+- `4:3` — 1440 × 1080
 
 ### Rendering limits
 
 - Code input: 20,000 characters, 1,000 line breaks, and 2,000 characters per line.
-- Code-scene MP4: up to 3 minutes.
-- Code-scene GIF: up to 45 seconds.
+- Code and terminal MP4: up to 3 minutes.
+- Code and terminal GIF: up to 45 seconds.
 - HTML: no animation-duration limit.
 - Terminal input: up to 1,000 command characters and 6,000 output characters.
 
@@ -244,6 +253,7 @@ flowchart LR
 4. The browser preview seeks that timeline with `requestAnimationFrame` acting only as its clock.
 5. HTML exports package the scene into a standalone page.
 6. GIF and MP4 exporters sample the same timeline server-side through Pillow and ImageIO/FFmpeg.
+   All four studios share the Full HD MP4 encoder in `src/video_export.py`.
 
 This design keeps the reveal order, scrolling, focus state, and cursor position reproducible at any timestamp. The preview and video exporters share colors and timing, although browser and Pillow font rasterization may produce small antialiasing differences.
 

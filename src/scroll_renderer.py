@@ -37,6 +37,7 @@ class ScrollOptions:
     background_style: str = "gradient"
     gradient_name: str = "midnight"
     canvas_padding: int = 92
+    highlight_lines: bool = True
 
 
 def make_scroll_options(**values) -> ScrollOptions:
@@ -78,6 +79,7 @@ def build_scroll_html(code: str, options: ScrollOptions, standalone: bool = Fals
         "targetStart": model["targetStart"],
         "targetEnd": model["targetEnd"],
         "lineCount": model["lineCount"],
+        "highlightLines": options.highlight_lines,
         "width": options.width,
         "height": options.height,
         "fontSize": options.font_size,
@@ -137,6 +139,8 @@ def _timeline(options: ScrollOptions) -> dict:
     scroll_end = start + scroll
     focus_start = scroll_end - min(380, scroll * .24)
     focus_end = focus_start + min(500, max(280, scroll * .32))
+    if not options.highlight_lines:
+        focus_start = focus_end = scroll_end
     duration = max(scroll_end, focus_end) + hold + 650
     return {key: round(value, 3) for key, value in {
         "startDelay": start, "scrollStart": start, "scrollEnd": scroll_end,
@@ -153,7 +157,7 @@ def _line_html(tokens: list[dict], number: int, model: dict, options: ScrollOpti
         if flags & 2: style += "font-weight:700;"
         if flags & 4: style += "text-decoration:underline;"
         content.append(f'<span class="syntax-token" style="{style}">{html.escape(token["content"])}</span>')
-    selected = model["targetStart"] <= number <= model["targetEnd"]
+    selected = options.highlight_lines and model["targetStart"] <= number <= model["targetEnd"]
     visible_number = number if options.show_line_numbers else ""
     return (
         f'<div class="scroll-line{" target-line" if selected else ""}" data-line="{number}">'

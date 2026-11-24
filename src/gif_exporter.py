@@ -9,16 +9,13 @@ import math
 from bisect import bisect_right
 from io import BytesIO
 from pathlib import Path
-from tempfile import TemporaryDirectory
-
-import imageio.v2 as imageio
 import numpy as np
 from PIL import Image, ImageColor, ImageDraw, ImageFilter, ImageFont
 
-from .gradients import gradient_stops
 from .renderer import RenderOptions, _canvas_padding, _gradient_enabled
 from .syntax_style import highlight_code, editor_theme
 from .typing_timeline import build_timeline
+from .gradients import gradient_stops
 
 VIDEO_FPS = 60
 FONT_DIR = Path(__file__).resolve().parents[1] / 'static' / 'fonts'
@@ -66,9 +63,71 @@ def _font(family, size, flags=0):
     raise RuntimeError('Bundled JetBrains Mono font is missing. Restore static/fonts.')
 
 
+class EditorFrame:
+    """Immutable chrome and clipping assets shared by every sampled frame."""
+
+    def __init__(self, renderer, labels=()):
+        r = renderer
+        s = r.render_scale
+        self.renderer = r
+        self.template = Image.new('RGB', (r.ew, r.eh), r.bg)
+        draw = ImageDraw.Draw(self.template)
+        chrome = _rgb(r.theme['chrome_bg'], r.bg)
+        if r.chrome:
+            top = _blend(chrome, r.fg, .10)
+            for y in range(r.chrome):
+                draw.line((0, y, r.ew, y), fill=_blend(top, chrome, y/max(1, r.chrome-1)))
+            for i, color in enumerate(('#ff5f57', '#febc2e', '#28c840')):
+                draw.ellipse(((20+i*17)*s, 18*s, (29+i*17)*s, 27*s), fill=color, outline=(25,25,25))
+            draw.line((0,r.chrome,r.ew,r.chrome), fill=_blend(r.bg,r.fg,.10), width=r.border)
+        self.headers = {}
+        if r.chrome and labels:
+            font = _font('JetBrains Mono', 8*s)
+            for label in labels:
+                header = self.template.crop((0,0,r.ew,r.chrome+r.border))
+                badge = ImageDraw.Draw(header)
+                bx = r.ew-font.getlength(label)-30*s
+                badge.rounded_rectangle((bx,14*s,r.ew-14*s,30*s), radius=8*s,
+                                        fill=_blend(chrome,r.fg,.04), outline=_blend(chrome,r.fg,.12))
+                badge.text(((bx+r.ew-14*s)/2,22*s),label,font=font,
+                           fill=_blend(r.bg,r.fg,.68),anchor='mm')
+                self.headers[label] = header
+        self.mask = Image.new('L', self.template.size)
+        ImageDraw.Draw(self.mask).rounded_rectangle((0,0,r.ew-1,r.eh-1),radius=r.radius,fill=255)
+
+    def compose(self, surface, time, start_delay, label=None):
+        r = self.renderer
+        editor = self.template.copy()
+        editor.paste(surface,(r.border,r.chrome+r.border))
+        if label in self.headers:
+            editor.paste(self.headers[label],(0,0))
+        draw = ImageDraw.Draw(editor)
+        draw.rounded_rectangle((0,0,r.ew-1,r.eh-1),radius=r.radius,
+                               outline=_blend(r.bg,r.fg,.17),width=r.border)
+        b = r.border
+        draw.rounded_rectangle((b,b,r.ew-b-1,r.eh-b-1),radius=max(0,r.radius-b),
+                               outline=_blend(r.bg,r.fg,.035),width=b)
+        mask = self.mask
+        entrance = _smoothstep(time/max(1,min(650,start_delay or 1)))
+        if entrance < 1:
+            scale = .992+entrance*.008
+            size = (max(1,round(r.ew*scale)),max(1,round(r.eh*scale)))
+            editor = editor.resize(size,Image.Resampling.LANCZOS)
+            mask = mask.resize(size,Image.Resampling.LANCZOS).point(
+                lambda value: round(value*(.76+.24*entrance)))
+        result = r.base.copy()
+        px = r.padding_x+round((r.ew-editor.width)/2)
+        py = r.padding_y+round((r.eh-editor.height)/2)+round((1-entrance)*14*r.render_scale)
+        result.paste(editor,(px,py),mask)
+        return result
+
+
 class FrameRenderer:
-    def __init__(self, code: str, options: RenderOptions):
+    def __init__(self, code: str, options: RenderOptions, render_scale: float = 1):
         self.options = o = options
+        self.render_scale = s = render_scale
+        self.border = max(1, round(s))
+        self.radius = o.radius*s
         self.highlight = highlight_code(code, o.language, o.theme_name)
         self.timeline = build_timeline(self.highlight, o)
         self.times = [e['at'] for e in self.timeline['events']]
@@ -76,29 +135,29 @@ class FrameRenderer:
         self.theme = editor_theme(self.highlight)
         self.bg = _rgb(self.highlight['background'])
         self.fg = _rgb(self.highlight['foreground'])
-        self.width, self.height = o.width, o.height
-        self.padding_y = _canvas_padding(o) if _gradient_enabled(o) else 0
+        self.width, self.height = round(o.width*s), round(o.height*s)
+        self.padding_y = round(_canvas_padding(o)*s) if _gradient_enabled(o) else 0
         self.padding_x = self.padding_y * 2
         self.padding = self.padding_y  # Backwards-compatible public measurement.
         self.ew, self.eh = self.width-self.padding_x*2, self.height-self.padding_y*2
-        self.chrome = 44 if o.show_window_chrome else 0
-        self.vw, self.vh = self.ew-2, self.eh-self.chrome-2
-        self.size = o.font_size
-        self.lh = o.font_size * o.line_height
-        self.content_x = (54 if o.show_line_numbers else 18) + (24 if o.show_diff_gutter else 0) + 16
+        self.chrome = round(44*s) if o.show_window_chrome else 0
+        self.vw, self.vh = self.ew-2*self.border, self.eh-self.chrome-2*self.border
+        self.size = o.font_size*s
+        self.lh = self.size * o.line_height
+        self.content_x = round(((54 if o.show_line_numbers else 18) + (24 if o.show_diff_gutter else 0) + 16)*s)
         self.fonts = [_font(o.font_family, self.size, flag) for flag in range(4)]
         self.number_font = _font(o.font_family, self.size*.82)
         self.line_images, self.line_chars = [], []
-        self.positions = [(self.content_x, 30 + (self.lh-self.size)/2, 0)]
+        self.positions = [(self.content_x, 30*s + (self.lh-self.size)/2, 0)]
         self._layout()
         self.scroll_keys = []
         self.scroll_times = []
         target_x = target_y = 0
-        max_y = max(0, 30 + len(self.highlight['lines'])*self.lh + 44-self.vh)
-        max_x = max(0, max((line.width for line in self.line_images), default=0)+self.content_x+32-self.vw)
+        max_y = max(0, 30*s + len(self.highlight['lines'])*self.lh + 44*s-self.vh)
+        max_x = max(0, max((line.width for line in self.line_images), default=0)+self.content_x+32*s-self.vw)
         for event in self.timeline['events']:
             x, y, _ = self.positions[event['count']]
-            sx = max(0, min(max_x, x-self.vw+60))
+            sx = max(0, min(max_x, x-self.vw+60*s))
             sy = max(0, min(max_y, y-self.vh+self.lh*2.5))
             if (sx, sy) != (target_x, target_y):
                 previous = self._scroll_at(event['at'])
@@ -106,8 +165,11 @@ class FrameRenderer:
                 self.scroll_times.append(event['at'])
                 target_x, target_y = sx, sy
         self.base = self._background()
+        self.editor_frame = EditorFrame(self)
+        self.line_times = [[item[4] for item in items] for items in self.line_chars]
 
     def _layout(self):
+        s = self.render_scale
         char_index = 0
         for line_no, tokens in enumerate(self.highlight['lines']):
             items, x = [], 0.0
@@ -118,9 +180,9 @@ class FrameRenderer:
                     at = self.timeline['chars'][char_index]['at']
                     items.append((char, x, advance, token, at, char_index))
                     x += advance
-                    self.positions.append((self.content_x+x, 30+line_no*self.lh+(self.lh-self.size)/2, line_no))
+                    self.positions.append((self.content_x+x, 30*s+line_no*self.lh+(self.lh-self.size)/2, line_no))
                     char_index += 1
-            strip = Image.new('RGBA', (max(1, math.ceil(x)+6), math.ceil(self.lh)), (0,0,0,0))
+            strip = Image.new('RGBA', (max(1, math.ceil(x)+round(6*s)), math.ceil(self.lh)), (0,0,0,0))
             draw = ImageDraw.Draw(strip)
             for char, x, advance, token, _, _ in items:
                 font = self.fonts[token['fontStyle'] & 3]
@@ -129,47 +191,46 @@ class FrameRenderer:
                 if char != '\t':
                     draw.text((x, baseline), char, font=font, fill=token['color'], anchor='ls')
                 if token['fontStyle'] & 4:
-                    draw.line((x, baseline+2, x+advance, baseline+2), fill=token['color'])
+                    draw.line((x, baseline+2*s, x+advance, baseline+2*s), fill=token['color'],width=self.border)
             self.line_images.append(strip)
             self.line_chars.append(items)
             if line_no < len(self.highlight['lines'])-1:
-                self.positions.append((self.content_x, 30+(line_no+1)*self.lh+(self.lh-self.size)/2, line_no+1))
+                self.positions.append((self.content_x, 30*s+(line_no+1)*self.lh+(self.lh-self.size)/2, line_no+1))
                 char_index += 1
 
     def _background(self):
+        s = self.render_scale
         if not self.padding:
             return Image.new('RGB', (self.width, self.height), self.bg)
-        # Vectorized equivalent of the 135-degree CSS gradient.
-        colors = np.array([_rgb(c) for c in gradient_stops(self.options.gradient_name)], dtype=float)
-        yy, xx = np.mgrid[0:self.height, 0:self.width]
+        colors = np.array([_rgb(color) for color in gradient_stops(self.options.gradient_name)], dtype=np.float32)
+        yy = np.arange(self.height, dtype=np.float32)[:, None]
+        xx = np.arange(self.width, dtype=np.float32)[None, :]
         position = (xx+yy)/max(1, self.width+self.height-2)*(len(colors)-1)
-        index = np.minimum(len(colors)-2, position.astype(int))
-        weight = (position-index)[..., None]
+        index = np.minimum(len(colors)-2, position.astype(np.int32))
+        weight = (position-index.astype(np.float32))[..., None]
         array = colors[index]*(1-weight)+colors[index+1]*weight
         nx = xx / max(1, self.width-1)
         ny = yy / max(1, self.height-1)
-        # Low-frequency edge light and a soft vignette give the canvas filmic depth
-        # without changing any TextMate token color inside the editor.
         for center_x, center_y, spread_x, spread_y, color, strength in [
-            (.13, .43, .30, .55, np.array((22, 105, 255)), .18),
-            (.88, .55, .30, .52, np.array((31, 188, 105)), .13),
-            (.50, .04, .48, .36, np.array((126, 174, 229)), .055),
+            (.13, .43, .30, .55, np.array((22, 105, 255), dtype=np.float32), .18),
+            (.88, .55, .30, .52, np.array((31, 188, 105), dtype=np.float32), .13),
+            (.50, .04, .48, .36, np.array((126, 174, 229), dtype=np.float32), .055),
         ]:
             glow = np.exp(-2.2 * (((nx-center_x)/spread_x)**2 + ((ny-center_y)/spread_y)**2)) * strength
-            array = array*(1-glow[...,None]) + color*glow[...,None]
+            array = array*(1-glow[..., None]) + color*glow[..., None]
         edge = np.clip(((nx-.5)/.62)**2 + ((ny-.46)/.70)**2, 0, 1)
-        array *= (1-.34*edge)[...,None]
-        grid = ((xx % 48 == 0) | (yy % 48 == 0)) & (edge < .78)
-        array[grid] = array[grid]*.985 + np.array((129,181,230))*.015
+        array *= (1-.34*edge)[..., None]
+        grid = ((xx % round(48*s) == 0) | (yy % round(48*s) == 0)) & (edge < .78)
+        array[grid] = array[grid]*.985 + np.array((129, 181, 230), dtype=np.float32)*.015
         image = Image.fromarray(array.astype('uint8'))
         for offset, blur, alpha in [(22, 44, 150), (10, 18, 126), (3, 6, 72)]:
             shadow = Image.new('RGBA', image.size)
             draw = ImageDraw.Draw(shadow)
             draw.rounded_rectangle(
-                (self.padding_x, self.padding_y+offset,
-                 self.width-self.padding_x, self.height-self.padding_y+offset),
-                radius=self.options.radius, fill=(0,0,0,alpha))
-            shadow = shadow.filter(ImageFilter.GaussianBlur(blur))
+                (self.padding_x, self.padding_y+round(offset*s),
+                 self.width-self.padding_x, self.height-self.padding_y+round(offset*s)),
+                radius=self.radius, fill=(0,0,0,alpha))
+            shadow = shadow.filter(ImageFilter.GaussianBlur(blur*s))
             image.paste(shadow, (0,0), shadow)
         return image
 
@@ -182,30 +243,31 @@ class FrameRenderer:
 
     def frame(self, time: float) -> Image.Image:
         o = self.options
+        s = self.render_scale
         event_index = bisect_right(self.times, time)-1
         event = self.timeline['events'][event_index] if event_index >= 0 else None
         count = event['count'] if event else 0
         x, y, active = self.positions[count]
         scroll_x, scroll_y = self._scroll_at(time)
-        editor = Image.new('RGB', (self.ew, self.eh), self.bg)
         surface = Image.new('RGB', (self.vw, self.vh), self.bg)
         draw = ImageDraw.Draw(surface)
         for line_no, strip in enumerate(self.line_images):
-            row_y = 30+line_no*self.lh-scroll_y
+            row_y = 30*s+line_no*self.lh-scroll_y
             if row_y+self.lh < 0 or row_y >= self.vh: continue
             if o.show_line_numbers:
                 color = _blend(self.bg,self.fg,.72) if line_no == active else _blend(self.bg, _rgb(self.theme['muted'], self.bg), .48)
                 ascent, descent = self.number_font.getmetrics()
                 baseline = row_y+(self.lh-ascent-descent)/2+ascent
-                draw.text((self.content_x-26-scroll_x, baseline), str(line_no+1), font=self.number_font, fill=color, anchor='rs')
+                draw.text((self.content_x-26*s-scroll_x, baseline), str(line_no+1), font=self.number_font, fill=color, anchor='rs')
             if o.show_diff_gutter:
-                draw.text((10-scroll_x, row_y), '+', font=self.number_font, fill=self.theme['plus'])
+                draw.text((10*s-scroll_x, row_y), '+', font=self.number_font, fill=self.theme['plus'])
             items = self.line_chars[line_no]
             if not items: continue
             # Crop settled glyphs once, then place each frontier glyph with the
             # same eased opacity and short vertical settle used by the HTML frame.
-            settled = [item for item in items if item[4]+self.timeline['fadeMs'] <= time]
-            end_x = math.ceil(settled[-1][1]+settled[-1][2]) if settled else 0
+            settled_count = bisect_right(self.line_times[line_no], time-self.timeline['fadeMs'])
+            settled = items[settled_count-1] if settled_count else None
+            end_x = math.ceil(settled[1]+settled[2]) if settled else 0
             left = max(0, math.floor(scroll_x-self.content_x))
             right = min(strip.width, math.ceil(scroll_x+self.vw-self.content_x))
             if right <= left: continue
@@ -213,15 +275,15 @@ class FrameRenderer:
             if settled_right > left:
                 region = strip.crop((left, 0, settled_right, strip.height))
                 surface.paste(region, (round(self.content_x+left-scroll_x), round(row_y)), region)
-            for char, char_x, advance, token, at, index in items[len(settled):]:
+            for char, char_x, advance, token, at, index in items[settled_count:]:
                 if at > time: break
-                start, end = max(left, math.floor(char_x)), min(right, math.ceil(char_x+advance+2))
+                start, end = max(left, math.floor(char_x)), min(right, math.ceil(char_x+advance+2*s))
                 if end <= start: continue
                 amount = _ease((time-at)/self.timeline['fadeMs'])
                 glyph = strip.crop((start, 0, end, strip.height))
                 alpha = np.asarray(glyph.getchannel('A')).copy()
                 glyph.putalpha(Image.fromarray((alpha*amount).astype('uint8')))
-                settle_y = round((1-amount)*3.5)
+                settle_y = round((1-amount)*3.5*s)
                 surface.paste(glyph, (round(self.content_x+start-scroll_x), round(row_y)+settle_y), glyph)
         age = time-(event['at'] if event else 0)
         before_count = self.timeline['events'][event_index-1]['count'] if event_index > 0 else 0
@@ -234,47 +296,31 @@ class FrameRenderer:
             cx, cy = x-scroll_x, y-scroll_y
             color = _rgb(self.theme['accent'], self.bg)
             line_alpha = _ease(age/90) if before_line != active else 1
-            if o.cursor == 'underline': draw.rectangle((cx,cy+self.size,cx+self.size*.6,cy+self.size+1),fill=color)
+            if o.cursor == 'underline': draw.rectangle((cx,cy+self.size,cx+self.size*.6,cy+self.size+self.border),fill=color)
             elif o.cursor == 'block': draw.rectangle((cx,cy,cx+self.size*.6,cy+self.size),fill=_blend(self.bg,color,.55*line_alpha))
-            else: draw.rectangle((cx,cy,cx+1,cy+self.size),fill=_blend(self.bg,color,line_alpha))
-        editor.paste(surface, (1,self.chrome+1))
-        draw = ImageDraw.Draw(editor)
-        if self.chrome:
-            chrome = _rgb(self.theme['chrome_bg'],self.bg)
-            chrome_top = _blend(chrome,self.fg,.10)
-            for chrome_y in range(self.chrome):
-                draw.line((0,chrome_y,self.ew,chrome_y),fill=_blend(chrome_top,chrome,chrome_y/max(1,self.chrome-1)))
-            for i,color in enumerate(('#ff5f57','#febc2e','#28c840')):
-                draw.ellipse((20+i*17,18,29+i*17,27),fill=color,outline=(25,25,25))
-            draw.line((0,self.chrome,self.ew,self.chrome),fill=_blend(self.bg,self.fg,.08))
-        draw.rounded_rectangle((0,0,self.ew-1,self.eh-1),radius=o.radius,outline=_blend(self.bg,self.fg,.17),width=1)
-        draw.rounded_rectangle((1,1,self.ew-2,self.eh-2),radius=max(0,o.radius-1),outline=_blend(self.bg,self.fg,.035),width=1)
-        mask = Image.new('L',editor.size)
-        ImageDraw.Draw(mask).rounded_rectangle((0,0,self.ew-1,self.eh-1),radius=o.radius,fill=255)
-        entrance = _smoothstep(time/max(1,min(650,o.start_delay_ms or 1)))
-        if entrance < 1:
-            scale = .992+entrance*.008
-            scaled_size = (max(1,round(self.ew*scale)),max(1,round(self.eh*scale)))
-            editor = editor.resize(scaled_size,Image.Resampling.LANCZOS)
-            mask = mask.resize(scaled_size,Image.Resampling.LANCZOS)
-            mask = mask.point(lambda value: round(value*(.76+.24*entrance)))
-        result = self.base.copy()
-        paste_x = self.padding_x + round((self.ew-editor.width)/2)
-        paste_y = self.padding_y + round((self.eh-editor.height)/2) + round((1-entrance)*14)
-        result.paste(editor,(paste_x,paste_y),mask)
-        return result
+            else: draw.rectangle((cx,cy,cx+self.border,cy+self.size),fill=_blend(self.bg,color,line_alpha))
+        return self.editor_frame.compose(surface,time,o.start_delay_ms)
+
+    def frame_key(self, time):
+        event_index = bisect_right(self.times,time)-1
+        at = self.times[event_index] if event_index >= 0 else 0
+        scroll_index = bisect_right(self.scroll_times,time)-1
+        scroll_end = self.scroll_times[scroll_index]+260 if scroll_index >= 0 else 0
+        if time >= max(at+self.timeline['fadeMs'],scroll_end,min(650,self.options.start_delay_ms or 1)):
+            age = time-at
+            cursor = time < self.timeline['typingEnd']+1100 and (age < 350 or int((age-350)/500)%2 == 0)
+            return ('hold',event_index,cursor)
+        return time
+
 
 
 def build_typing_mp4(code: str, options: RenderOptions, frame_step: int = 3, fps: int = VIDEO_FPS) -> bytes:
-    renderer = FrameRenderer(code, options)
+    from .video_export import encode_mp4, mp4_render_scale
+
+    renderer = FrameRenderer(code, options, render_scale=mp4_render_scale(options))
     if renderer.duration > 180000:
         raise ExportLimitError('MP4 is limited to 3 minutes. Increase typing speed or export HTML for longer scenes.')
-    with TemporaryDirectory(prefix='code-typing-') as directory:
-        path = Path(directory) / 'animation.mp4'
-        with imageio.get_writer(str(path), fps=fps, codec='libx264', quality=8, macro_block_size=1, pixelformat='yuv420p') as writer:
-            for frame_no in range(math.ceil(renderer.duration*fps/1000)):
-                writer.append_data(np.asarray(renderer.frame(frame_no*1000/fps)))
-        return path.read_bytes()
+    return encode_mp4(renderer, 'code-typing-', fps)
 
 
 def build_typing_gif(code: str, options: RenderOptions, frame_step: int = 3) -> bytes:

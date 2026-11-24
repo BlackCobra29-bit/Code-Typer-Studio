@@ -4,18 +4,22 @@ import unittest
 from dataclasses import replace
 from html.parser import HTMLParser
 from io import BytesIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
+import imageio.v2 as imageio
 from PIL import Image
 from fastapi.testclient import TestClient
 from src.languages import LANGUAGES
 from src.renderer import RenderOptions, build_typing_html
 from src.syntax_style import THEME_NAMES, highlight_code, detect_language, normalize_code
 from src.typing_timeline import build_timeline
-from src.gif_exporter import FrameRenderer, build_typing_gif
+from src.gif_exporter import FrameRenderer, build_typing_gif, build_typing_mp4
 from src.diff_renderer import DiffOptions, build_diff_html, build_diff_model
-from src.diff_exporter import DiffFrameRenderer
+from src.diff_exporter import DiffFrameRenderer, build_diff_mp4
 from src.scroll_renderer import ScrollOptions, build_scroll_html, build_scroll_model
-from src.scroll_exporter import ScrollFrameRenderer
+from src.scroll_exporter import ScrollFrameRenderer, build_scroll_mp4
+from src.video_export import mp4_render_scale
 from main import CODE_ASPECT_RATIOS, _apply_code_aspect_ratio, app
 
 
@@ -188,8 +192,82 @@ class AspectRatioTests(unittest.TestCase):
         self.assertEqual(_apply_code_aspect_ratio('1_1'),(1080,1080,'1_1'))
         self.assertEqual(_apply_code_aspect_ratio('unsupported'),(1280,720,'16_9'))
 
+    def test_mp4_uses_native_full_hd_text_and_preserves_square(self):
+        options = RenderOptions(width=1280,height=720,font_size=22,radius=14,canvas_padding=50)
+        landscape = FrameRenderer('x = 1',options,render_scale=mp4_render_scale(options))
+        self.assertEqual((landscape.width,landscape.height,landscape.fonts[0].size,
+                          landscape.radius,landscape.padding_y,landscape.chrome,landscape.content_x),
+                         (1920,1080,33,21,0,66,105))
+        self.assertIs(landscape.options,options)
+        square = RenderOptions(width=1080,height=1080)
+        self.assertEqual(mp4_render_scale(square),1)
+
+    def test_three_code_mp4_exports_are_full_hd(self):
+        jobs = (
+            ('typing', lambda: build_typing_mp4('x = 1', RenderOptions(
+                language='text',width=1280,height=720,background_style='none',start_delay_ms=0,speed_ms=4),fps=2)),
+            ('diff', lambda: build_diff_mp4('x = 1','x = 2', DiffOptions(
+                language='text',width=1280,height=720,background_style='none',
+                start_delay_ms=100,hold_ms=200,transition_ms=240),fps=2)),
+            ('scroll', lambda: build_scroll_mp4('x = 1\nx = 2', ScrollOptions(
+                language='text',width=1280,height=720,background_style='none',
+                start_delay_ms=250,hold_ms=300,scroll_ms=450),fps=2)),
+        )
+        with TemporaryDirectory() as directory:
+            for name, build in jobs:
+                with self.subTest(studio=name):
+                    path = Path(directory) / f'{name}.mp4'
+                    path.write_bytes(build())
+                    with imageio.get_reader(str(path),format='ffmpeg') as reader:
+                        self.assertEqual(reader.get_meta_data()['size'],(1920,1080))
+                        self.assertEqual(reader.get_data(0).shape,(1080,1920,3))
+
 
 class CodeScrollTests(unittest.TestCase):
+    def test_scroll_only_reaches_bottom_without_dimming_and_ignores_range(self):
+        source = '\n'.join('value = 1' for _ in range(30))
+        options = ScrollOptions(language='text',width=700,height=400,background_style='none',
+                                highlight_lines=False,target_start=2,target_end=3)
+        for scale in (1,1.5):
+            with self.subTest(scale=scale):
+                renderer = ScrollFrameRenderer(source,options,render_scale=scale)
+                bottom = max(0,74*scale+30*renderer.row_h-renderer.vh)
+                self.assertEqual(renderer.target_scroll,bottom)
+                self.assertEqual(renderer._state(renderer.timeline['scrollEnd']),(1,0))
+                frame = renderer.frame(renderer.duration)
+                other = ScrollFrameRenderer(source,replace(options,target_start=20,target_end=22),render_scale=scale)
+                self.assertEqual(frame.tobytes(),other.frame(other.duration).tobytes())
+                x = renderer.border+renderer.content_x
+                y = round(renderer.chrome+renderer.border+30*scale+29*renderer.row_h-bottom)
+                last_line = frame.crop((x,y,x+150,y+round(renderer.row_h)))
+                colors = last_line.getcolors(maxcolors=last_line.width*last_line.height)
+                self.assertIn(renderer.fg,[color for count,color in colors])
+                self.assertEqual(renderer.frame_key(renderer.timeline['scrollEnd']),renderer.frame_key(renderer.duration))
+        for source in ('','one line'):
+            renderer = ScrollFrameRenderer(source,options)
+            self.assertEqual(renderer.target_scroll,0)
+            self.assertEqual(renderer.frame(renderer.duration).size,(700,400))
+
+    def test_scroll_only_setting_round_trips_through_routes(self):
+        client = TestClient(app)
+        page = client.get('/code-scroll')
+        self.assertIn('role="switch"',page.text)
+        for setting,enabled in ((None,True),('off',False),(['off','on'],True)):
+            with self.subTest(setting=setting):
+                data = {'code':'one\ntwo\nthree','language':'text','target_start':'2','target_end':'3'}
+                if setting is not None:
+                    data['highlight_lines'] = setting
+                project = client.post('/code-scroll/download/project',data=data)
+                self.assertEqual(project.status_code,200)
+                self.assertIs(project.json()['options']['highlight_lines'],enabled)
+                exported = client.post('/code-scroll/download/html',data=data)
+                self.assertEqual(exported.status_code,200)
+                payload = json.loads(re.search(r'id="scrollOptions">(.*?)</script>',exported.text,re.S)[1])
+                self.assertIs(payload['highlightLines'],enabled)
+                self.assertEqual(exported.text.count('class="scroll-line target-line"'),2 if enabled else 0)
+                if not enabled:
+                    self.assertEqual(payload['timeline']['focusEnd'],payload['timeline']['scrollEnd'])
+
     def test_scroll_model_normalizes_range_and_builds_cinematic_timeline(self):
         source = '\n'.join(f'const line{i} = {i};' for i in range(1,31))
         model = build_scroll_model(source,ScrollOptions(

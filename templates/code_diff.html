@@ -1,7 +1,8 @@
 {% extends "_base.html" %}
 {% block title %}Code Diff — Coduxum{% endblock %}
+{% block page_class %}studio-page code-diff-page bg-[#07080b] text-slate-100{% endblock %}
 {% block content %}
-<form id="diff-form" class="min-h-full bg-slate-50" method="post">
+<form id="diff-form" class="code-diff-surface min-h-full" method="post">
   <button id="diff-preview-trigger" class="hidden" type="button" hx-post="/code-diff/preview" hx-include="#diff-form" hx-target="#diff-preview-panel" hx-swap="innerHTML" hx-trigger="refreshPreview" hx-sync="this:replace"></button>
   <div class="mx-auto flex w-full max-w-[1265px] flex-col items-center px-4 pb-24 sm:pb-28">
     <section class="w-full max-w-[900px] py-12 text-center sm:py-16" aria-labelledby="code-diff-title">
@@ -27,6 +28,7 @@
           <button class="h-9 rounded-lg border border-emerald-500/35 bg-emerald-600 px-5 text-sm font-bold text-white" type="submit" formaction="/code-diff/download/mp4" formmethod="post" data-diff-export>Export MP4</button>
           <button class="h-9 rounded-lg border border-blue-500/40 bg-blue-600 px-5 text-sm font-bold text-white" type="submit" formaction="/code-diff/download/project" formmethod="post" data-diff-export>Export JSON</button>
         </nav>
+        {% include "_mp4_quality.html" %}
       </div>
     </section>
 

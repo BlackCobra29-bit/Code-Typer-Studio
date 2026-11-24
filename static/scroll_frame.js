@@ -1,6 +1,7 @@
 (() => {
   'use strict';
   const options=JSON.parse(document.getElementById('scrollOptions').textContent);
+  const highlightLines=options.highlightLines!==false;
   const timeline=options.timeline,stage=document.getElementById('stage'),editor=document.getElementById('editorWindow');
   const viewport=document.getElementById('viewport'),content=document.getElementById('scrollContent');
   const rows=[...content.querySelectorAll('.scroll-line')],targets=rows.filter(row=>row.classList.contains('target-line'));
@@ -14,6 +15,8 @@
   const progress=(time,start,end,fn=ease)=>reduced?time>=start?1:0:fn((time-start)/Math.max(1,end-start));
   function fit(){const controls=document.body.classList.contains('embedded')?0:46;const scale=Math.min(innerWidth/options.width,(innerHeight-controls)/options.height);stage.style.transform=`translate(${(innerWidth-options.width*scale)/2}px,${(innerHeight-controls-options.height*scale)/2}px) scale(${scale})`;}
   function layout(){
+    box.hidden=!highlightLines;
+    if(!highlightLines){targetY=Math.max(0,content.scrollHeight-viewport.clientHeight);return;}
     if(!targets.length)return;
     const first=targets[0],last=targets[targets.length-1],top=first.offsetTop,height=last.offsetTop+last.offsetHeight-top;
     targetY=clamp(top+height/2-viewport.clientHeight/2,0,Math.max(0,content.scrollHeight-viewport.clientHeight));
@@ -23,14 +26,14 @@
   function draw(time){
     elapsed=clamp(time,0,timeline.duration);
     const scroll=progress(elapsed,timeline.scrollStart,timeline.scrollEnd,smooth);
-    const focus=progress(elapsed,timeline.focusStart,timeline.focusEnd);
+    const focus=highlightLines?progress(elapsed,timeline.focusStart,timeline.focusEnd):0;
     const entrance=reduced?1:smooth(elapsed/Math.max(1,Math.min(650,timeline.startDelay)));
     editor.style.transform=`translate3d(0,${(1-entrance)*14}px,0) scale(${.992+entrance*.008})`;editor.style.opacity=String(.76+entrance*.24);
     content.style.transform=`translate3d(0,${-targetY*scroll}px,0)`;
     box.style.opacity=String(focus);box.style.transform=`scale(${.985+focus*.015})`;
     rows.forEach(row=>{row.style.opacity=String(row.classList.contains('target-line')?1:1-focus*.65)});
     const label=options.targetStart===options.targetEnd?`Line ${options.targetStart}`:`Lines ${options.targetStart}–${options.targetEnd}`;
-    badge.textContent=elapsed<timeline.scrollEnd?'Scanning':label;
+    badge.textContent=highlightLines?(elapsed<timeline.scrollEnd?'Scanning':label):(elapsed<timeline.scrollEnd?'Scrolling':'End of file');
     scrubber.value=String(elapsed/timeline.duration*1000);document.getElementById('timecode').textContent=`${(elapsed/1000).toFixed(1)} / ${(timeline.duration/1000).toFixed(1)}s`;
     content.dataset.time=elapsed.toFixed(1);if(Math.abs(elapsed-lastReported)>80){report();lastReported=elapsed;}
   }

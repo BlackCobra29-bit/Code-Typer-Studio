@@ -1,3 +1,14 @@
+function initSiteNavigation() {
+  const header = document.querySelector('.site-navigation');
+  if (!header) return;
+  const updateSurface = () => header.classList.toggle('nav-scrolled', window.scrollY > 8);
+  window.addEventListener('scroll', updateSurface, { passive: true });
+  document.body.addEventListener('htmx:afterSwap', () => window.requestAnimationFrame(updateSurface));
+  document.body.addEventListener('htmx:historyRestore', () => window.requestAnimationFrame(updateSurface));
+  updateSurface();
+}
+initSiteNavigation();
+
 const modalTriggers = document.querySelectorAll("[data-modal-open]");
 const modals = document.querySelectorAll("[data-modal]");
 let activeModal = null;

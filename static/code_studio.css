@@ -113,3 +113,316 @@
   from { opacity: 0; transform: translateY(8px); }
 }
 .brand-logo { filter: drop-shadow(0 0 1px rgb(15 23 42 / .72)); }
+
+/* Studio surfaces use the site palette; editor tokens remain theme-controlled. */
+.studio-page { color-scheme: dark; background: var(--site-bg) !important; }
+#studio-form.code-typer-surface { background: transparent; color: var(--site-ink); }
+#studio-form section[aria-labelledby='code-typer-title'] { padding-top: 52px; }
+#studio-form section[aria-labelledby='code-typer-title'] > p:first-child { color: var(--site-accent); }
+#studio-form #code-typer-title { color: var(--site-ink); text-shadow: 0 16px 50px rgb(78 99 218 / .12); }
+#studio-form section[aria-labelledby='code-typer-title'] > p:last-child { color: var(--site-muted); }
+
+#studio-form .studio-preview-wrap { max-width: 920px; }
+#studio-form .studio-preview-wrap > div:first-child {
+  border: 1px solid rgb(255 255 255 / .1);
+  border-bottom: 0;
+  box-shadow: 0 32px 90px rgb(0 0 0 / .48), 0 0 70px rgb(78 99 218 / .08);
+}
+#studio-form .studio-transport {
+  border-color: rgb(255 255 255 / .1);
+  background: var(--site-surface);
+  box-shadow: inset 0 1px rgb(255 255 255 / .035);
+}
+#studio-form .studio-transport button { color: var(--site-text); }
+#studio-form .studio-transport button:hover { color: var(--site-ink); }
+#studio-form .studio-transport input { accent-color: var(--site-accent); }
+#studio-form .studio-transport output { color: var(--site-muted); }
+#studio-form .preview-caption { color: var(--site-muted); }
+#studio-form #preview-status { color: var(--site-text); }
+
+#studio-form nav[aria-label='Primary actions'] button {
+  border-color: rgb(255 255 255 / .11);
+  background: rgb(255 255 255 / .035);
+  color: var(--site-text);
+  box-shadow: inset 0 1px rgb(255 255 255 / .035);
+}
+#studio-form nav[aria-label='Primary actions'] button:hover {
+  border-color: rgb(255 255 255 / .2);
+  background: rgb(255 255 255 / .075);
+  color: var(--site-ink);
+  filter: none;
+}
+#studio-form nav[aria-label='Primary actions'] button[formaction='/download/mp4'] {
+  border-color: var(--site-accent-hover);
+  background: var(--site-accent);
+  color: var(--site-on-accent);
+  font-weight: 700;
+  box-shadow: inset 0 1px rgb(255 255 255 / .25), 0 10px 28px rgb(255 91 53 / .18);
+}
+#studio-form nav[aria-label='Primary actions'] button[formaction='/download/mp4']:hover { background: var(--site-accent-hover); border-color: var(--site-accent-hover); color: var(--site-on-accent); }
+#studio-form .studio-preview-wrap > p { color: var(--site-muted); }
+#studio-form .studio-preview-wrap > p span { color: var(--site-text); }
+
+#studio-form section[aria-label='Studio controls'] > div,
+#studio-form #editor,
+#studio-form details {
+  border-color: rgb(255 255 255 / .09);
+  background: var(--site-surface);
+  box-shadow: inset 0 1px rgb(255 255 255 / .035), 0 18px 50px rgb(0 0 0 / .28);
+}
+#studio-form section[aria-label='Studio controls'] label > span,
+#studio-form [data-custom-select] > span { color: var(--site-muted); }
+#studio-form input:not([type='range']):not([type='checkbox']),
+#studio-form select,
+#studio-form [data-select-trigger] {
+  border-color: rgb(255 255 255 / .075);
+  background: var(--site-input);
+  color: var(--site-ink);
+}
+#studio-form input:not([type='range']):not([type='checkbox']):hover,
+#studio-form select:hover,
+#studio-form [data-select-trigger]:hover { border-color: rgb(255 255 255 / .14); background: var(--site-hover); color: var(--site-ink); }
+#studio-form input:not([type='range']):not([type='checkbox']):focus,
+#studio-form select:focus,
+#studio-form [data-select-trigger]:focus {
+  border-color: rgb(255 91 53 / .5);
+  box-shadow: 0 0 0 3px rgb(255 91 53 / .1);
+}
+#studio-form [data-select-menu] {
+  border: 1px solid rgb(255 255 255 / .1);
+  background: var(--site-surface);
+  box-shadow: 0 24px 60px rgb(0 0 0 / .55), inset 0 1px rgb(255 255 255 / .04);
+  --tw-ring-shadow: 0 0 transparent;
+}
+#studio-form [data-select-menu] button { color: var(--site-text); }
+#studio-form [data-select-menu] button:hover,
+#studio-form [data-select-menu] button:focus { background: rgb(255 255 255 / .06); color: var(--site-ink); }
+#studio-form [data-select-menu] button[aria-selected='true'] { background: rgb(255 91 53 / .1); color: var(--site-accent); }
+#studio-form #editor > div:first-child > div:first-child { color: var(--site-ink); }
+#studio-form #editor > div:first-child > div:last-child { color: var(--site-muted); }
+#studio-form #editor .CodeMirror { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .055); }
+#studio-form #editor .CodeMirror-focused { outline-color: rgb(255 91 53 / .34); }
+#studio-form details summary { color: var(--site-ink); }
+#studio-form details summary span { color: var(--site-muted); }
+#studio-form details > div { border-color: rgb(255 255 255 / .08); }
+#studio-form details label.inline-flex {
+  border: 1px solid rgb(255 255 255 / .07);
+  background: var(--site-input);
+  color: var(--site-text);
+}
+#studio-form details input[type='checkbox'] { accent-color: var(--site-accent); }
+#studio-form #canvas-help { color: var(--site-muted); }
+#studio-form button:focus-visible,
+#studio-form input:focus-visible,
+#studio-form select:focus-visible,
+#studio-form summary:focus-visible { outline-color: var(--site-accent); }
+
+/* Code Diff + Code Scroll content */
+#diff-form.code-diff-surface,
+#scroll-form.code-scroll-surface { background: transparent; color: var(--site-ink); }
+#diff-form section[aria-labelledby='code-diff-title'],
+#scroll-form section[aria-labelledby='code-scroll-title'] { padding-top: 52px; }
+#diff-form section[aria-labelledby='code-diff-title'] > p:first-child,
+#scroll-form section[aria-labelledby='code-scroll-title'] > p:first-child { color: var(--site-accent); }
+#diff-form #code-diff-title,
+#scroll-form #code-scroll-title {
+  color: var(--site-ink);
+  text-shadow: 0 16px 50px rgb(78 99 218 / .12);
+}
+#diff-form section[aria-labelledby='code-diff-title'] > p:last-child,
+#scroll-form section[aria-labelledby='code-scroll-title'] > p:last-child { color: var(--site-muted); }
+
+#diff-form .studio-preview-wrap > div:first-child,
+#scroll-form .studio-preview-wrap > div:first-child {
+  border: 1px solid rgb(255 255 255 / .1);
+  border-bottom: 0;
+  box-shadow: 0 32px 90px rgb(0 0 0 / .48), 0 0 70px rgb(78 99 218 / .08);
+}
+#diff-form .studio-transport,
+#scroll-form .studio-transport {
+  border-color: rgb(255 255 255 / .1);
+  background: var(--site-surface);
+  box-shadow: inset 0 1px rgb(255 255 255 / .035);
+}
+#diff-form .studio-transport button,
+#scroll-form .studio-transport button { color: var(--site-text); }
+#diff-form .studio-transport button:hover,
+#scroll-form .studio-transport button:hover { color: var(--site-ink); }
+#diff-form .studio-transport input,
+#scroll-form .studio-transport input { accent-color: var(--site-accent); }
+#diff-form .studio-transport output,
+#scroll-form .studio-transport output { color: var(--site-muted); }
+#diff-form .preview-caption,
+#scroll-form .preview-caption { color: var(--site-muted); }
+#diff-form #diff-preview-status,
+#scroll-form #scroll-preview-status { color: var(--site-text); }
+
+#diff-form nav[aria-label='Code diff actions'] button,
+#scroll-form nav[aria-label='Code scroll actions'] button {
+  border-color: rgb(255 255 255 / .11);
+  background: rgb(255 255 255 / .035);
+  color: var(--site-text);
+  box-shadow: inset 0 1px rgb(255 255 255 / .035);
+}
+#diff-form nav[aria-label='Code diff actions'] button:hover,
+#scroll-form nav[aria-label='Code scroll actions'] button:hover {
+  border-color: rgb(255 255 255 / .2);
+  background: rgb(255 255 255 / .075);
+  color: var(--site-ink);
+  filter: none;
+}
+#diff-form nav[aria-label='Code diff actions'] button[formaction='/code-diff/download/mp4'],
+#scroll-form nav[aria-label='Code scroll actions'] button[formaction='/code-scroll/download/mp4'] {
+  border-color: var(--site-accent-hover);
+  background: var(--site-accent);
+  color: var(--site-on-accent);
+  font-weight: 700;
+  box-shadow: inset 0 1px rgb(255 255 255 / .25), 0 10px 28px rgb(255 91 53 / .18);
+}
+#diff-form nav[aria-label='Code diff actions'] button[formaction='/code-diff/download/mp4']:hover,
+#scroll-form nav[aria-label='Code scroll actions'] button[formaction='/code-scroll/download/mp4']:hover {
+  border-color: var(--site-accent-hover);
+  background: var(--site-accent-hover);
+  color: var(--site-on-accent);
+}
+
+#diff-form section[aria-label='Code diff controls'] > div:first-child,
+#diff-form .diff-source-card,
+#diff-form details,
+#scroll-form section[aria-label='Code scroll controls'] > div:first-child,
+#scroll-form .scroll-source-card,
+#scroll-form details {
+  border-color: rgb(255 255 255 / .09);
+  background: var(--site-surface);
+  box-shadow: inset 0 1px rgb(255 255 255 / .035), 0 18px 50px rgb(0 0 0 / .28);
+}
+#diff-form section[aria-label='Code diff controls'] label > span,
+#diff-form [data-diff-custom-select] > span,
+#scroll-form section[aria-label='Code scroll controls'] label > span,
+#scroll-form [data-scroll-custom-select] > span { color: var(--site-muted); }
+#diff-form input:not([type='range']):not([type='checkbox']),
+#diff-form select,
+#diff-form [data-diff-select-trigger],
+#scroll-form input:not([type='range']):not([type='checkbox']),
+#scroll-form select,
+#scroll-form [data-scroll-select-trigger] {
+  border-color: rgb(255 255 255 / .075);
+  background: var(--site-input);
+  color: var(--site-ink);
+}
+#diff-form input:not([type='range']):not([type='checkbox']):hover,
+#diff-form select:hover,
+#diff-form [data-diff-select-trigger]:hover,
+#scroll-form input:not([type='range']):not([type='checkbox']):hover,
+#scroll-form select:hover,
+#scroll-form [data-scroll-select-trigger]:hover {
+  border-color: rgb(255 255 255 / .14);
+  background: var(--site-hover);
+  color: var(--site-ink);
+}
+#diff-form input:not([type='range']):not([type='checkbox']):focus,
+#diff-form select:focus,
+#diff-form [data-diff-select-trigger]:focus,
+#scroll-form input:not([type='range']):not([type='checkbox']):focus,
+#scroll-form select:focus,
+#scroll-form [data-scroll-select-trigger]:focus {
+  border-color: rgb(255 91 53 / .5);
+  box-shadow: 0 0 0 3px rgb(255 91 53 / .1);
+}
+#diff-form [data-diff-select-menu],
+#scroll-form [data-scroll-select-menu] {
+  border: 1px solid rgb(255 255 255 / .1);
+  background: var(--site-surface);
+  box-shadow: 0 24px 60px rgb(0 0 0 / .55), inset 0 1px rgb(255 255 255 / .04);
+  --tw-ring-shadow: 0 0 transparent;
+}
+#diff-form [data-diff-select-menu] button,
+#scroll-form [data-scroll-select-menu] button { color: var(--site-text); }
+#diff-form [data-diff-select-menu] button:hover,
+#diff-form [data-diff-select-menu] button:focus,
+#scroll-form [data-scroll-select-menu] button:hover,
+#scroll-form [data-scroll-select-menu] button:focus { background: rgb(255 255 255 / .06); color: var(--site-ink); }
+#diff-form [data-diff-select-menu] button[aria-selected='true'],
+#scroll-form [data-scroll-select-menu] button[aria-selected='true'] { background: rgb(255 91 53 / .1); color: var(--site-accent); }
+
+#diff-form .diff-source-card > div > div p:first-child,
+#scroll-form .scroll-source-card > div > div p:first-child { color: var(--site-ink); }
+#diff-form .diff-source-card > div > div p:last-child,
+#scroll-form .scroll-source-card > div > div p:last-child { color: var(--site-muted); }
+#diff-form .diff-source-card > div > span,
+#scroll-form .scroll-source-card > div > span {
+  border: 1px solid rgb(255 255 255 / .07);
+  background: var(--site-input);
+  color: var(--site-muted);
+}
+#diff-form .diff-source-card .CodeMirror,
+#scroll-form .scroll-source-card .CodeMirror { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .055); }
+#diff-form .diff-source-card .CodeMirror-focused,
+#scroll-form .scroll-source-card .CodeMirror-focused { outline-color: rgb(255 91 53 / .34); }
+#diff-form details summary,
+#scroll-form details summary { color: var(--site-ink); }
+#diff-form details summary > span,
+#scroll-form details summary > span { color: var(--site-muted); }
+#diff-form details > div,
+#scroll-form details > div { border-color: rgb(255 255 255 / .08); }
+#diff-form details label.inline-flex,
+#scroll-form details label.inline-flex {
+  border: 1px solid rgb(255 255 255 / .07);
+  background: var(--site-input);
+  color: var(--site-text);
+}
+#diff-form details input[type='checkbox'],
+#scroll-form details input[type='checkbox'] { accent-color: var(--site-accent); }
+#diff-form button:focus-visible,
+#diff-form input:focus-visible,
+#diff-form select:focus-visible,
+#diff-form summary:focus-visible,
+#scroll-form button:focus-visible,
+#scroll-form input:focus-visible,
+#scroll-form select:focus-visible,
+#scroll-form summary:focus-visible { outline-color: var(--site-accent); }
+
+#scroll-form .scroll-mode-control {
+  padding: 14px 16px;
+  border: 1px solid rgb(255 255 255 / .09);
+  border-radius: 12px;
+  background: var(--site-surface);
+  color: var(--site-ink);
+}
+#scroll-form .scroll-highlight-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+#scroll-form .scroll-highlight-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+#scroll-form .scroll-highlight-track {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  background: #293140;
+}
+#scroll-form .scroll-highlight-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+}
+#scroll-form .scroll-highlight-input:checked + .scroll-highlight-track { background: var(--site-accent); }
+#scroll-form .scroll-highlight-input:checked + .scroll-highlight-track::after { transform: translateX(16px); }
+#scroll-form .scroll-highlight-input:focus-visible + .scroll-highlight-track { outline: 2px solid var(--site-accent); outline-offset: 3px; }
+#scroll-form #scroll-highlight-help { margin-top: 6px; font-size: 12px; color: var(--site-muted); }
+#scroll-form .scroll-range-inactive { opacity: .45; }
